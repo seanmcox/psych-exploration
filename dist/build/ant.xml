@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="hexaco" name="Psych Exploration">
+	<tstamp>
+	     <format property="version" pattern="yyyy.MM.dd"/>
+	</tstamp>
+	
+    <property name="dir.buildfile" value="."/>
+    <property name="dir.workspace" value="${dir.buildfile}/../../.."/>
+    <property name="dir.project" value="${dir.buildfile}/../.."/>
+
+    <target name="hexaco" description="Process HEXACO data">
+    	<java classpath="${dir.project}/bin" classname="com.shtick.psych.Main">
+    		<arg value="${dir.project}/data/HEXACO/data.csv"/>
+    		<arg value="${dir.project}/data/HEXACO/output.csv"/>
+    		<arg value="country,elapse"/>
+    	</java>
+    </target>
+</project>
