@@ -10,6 +10,11 @@
 package com.shtick.math.statistics.pca;
 
 import com.shtick.math.statistics.Eigensystem;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+
 import com.shtick.math.statistics.DoubleMatrix;
 import com.shtick.math.statistics.StatsDataSet;
 import com.shtick.math.statistics.StatusTracker;
@@ -66,6 +71,10 @@ public class PrincipleComponentAnalysis {
 		    	cvm[i][j]/=weightTotal;
 	
 		DoubleMatrix m = new DoubleMatrix(cvm);
+		File f = new File("./covariance.txt");
+		System.out.println(f.getAbsolutePath());
+		m.print(new PrintStream(new FileOutputStream(f)));
+		System.exit(0);
 	
 		Eigensystem system;
 		if(statusTracker!=null)

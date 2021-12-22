@@ -387,10 +387,9 @@ public class Main {
 								next = new WeightedDatum();
 								next.weight = 1;
 								next.datum = new double[varCount];
-								for(int i=0;i<parts.length;i++) {
+								for(int i=0;i<parts.length;i++)
 									if(indexMap[i]>=0)
 										next.datum[indexMap[i]]=Double.parseDouble(parts[i])-means[indexMap[i]];
-								}
 								break;
 							}
 							line = in.readLine();

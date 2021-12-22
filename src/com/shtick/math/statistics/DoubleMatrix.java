@@ -9,7 +9,10 @@
 
 package com.shtick.math.statistics;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +43,30 @@ public class DoubleMatrix {
     
     /**
      * 
+     * @param size
+     * @return An identity matrix of the given size.
+     */
+    public static DoubleMatrix createIdentityMatrix(int size) {
+    	return createScalingMatrix(size, 1);
+    }
+    
+    /**
+     * 
+     * @param size
+     * @param scale
+     * @return A matrix equal to the identity matrix multiplied by scale.
+     */
+    public static DoubleMatrix createScalingMatrix(int size, double scale) {
+    	double[][] matrix = new double[size][size];
+		int i,j;
+		for(i = 0;i<size;i++)
+			for(j = 0;j<size;j++)
+				matrix[i][j] = (i==j)?scale:0;
+		return new DoubleMatrix(matrix);
+    }
+
+    /**
+     * 
      * @return The number of rows in the matrix 
      */
     public int getRows() {
@@ -65,6 +92,8 @@ public class DoubleMatrix {
     }
     
     /**
+     * If we run into the issue of this determinant overflowing the double, then we might need to implement the log-determinant as describe here:
+     * https://blogs.sas.com/content/iml/2012/10/31/compute-the-log-determinant-of-a-matrix.html#:~:text=To%20computing%20the%20logarithm%20of,cause%20a%20numerical%20overflow%20error.
      * 
      * @return The determinant of the matrix.
      * @throws RuntimeException is called on a non-square matrix.
@@ -414,23 +443,52 @@ public class DoubleMatrix {
     		statusTracker.updateStatus("Setup", 0, 0);
 		double[] eigenvalues=new double[matrix.length];
 		double[][] eigenvectors=new double[matrix.length][];
-	
-		PolynomialMatrix m = new PolynomialMatrix(matrix);
-		PolynomialMatrix eigensystem=m.subtract(PolynomialMatrix.createScalingMatrix(m.getRows(),new Polynomial(new double[]{0,1})));
-	
-    	if(statusTracker!=null)
-    		statusTracker.updateStatus("Find eigenvalues: get determinant", 0, 0.3);
-		Polynomial determinant = eigensystem.getDeterminant();
-    	if(statusTracker!=null)
-    		statusTracker.updateStatus("Find eigenvalues: find zeros of polynomial", 0.5, 0.3);
-		List<Double> eigenvalueList = determinant.findZeros();
 		
-    	if(statusTracker!=null)
-    		statusTracker.updateStatus("Find eigenvectors", 0, 0.6);
+		// Estimate how big a number we need to reliably calculate the determinant.
+		Quadruple bigNumber = new Quadruple(matrix.length);
+		for(int row=0;row<matrix.length;row++) {
+			Quadruple rowSum = new Quadruple(0);
+			for(int col=0;col<matrix.length;col++) {
+				rowSum = rowSum.add(new Quadruple(matrix[row][col]).getAbs());
+			}
+			bigNumber = bigNumber.multiply(rowSum);
+		}
+		Quadruple biggestDouble = new Quadruple(Double.MAX_VALUE);
+	
+		List<Double> eigenvalueList;
+//		if(bigNumber.compareTo(biggestDouble)<0) {
+//			ArithmeticMatrix<DoublePolynomial> m = ArithmeticMatrix.createDoublePolynomialMatrix(matrix);
+//			ArithmeticMatrix<DoublePolynomial> eigensystem=m.subtract(ArithmeticMatrix.<DoublePolynomial>createScalingMatrix(m.getRows(),new DoublePolynomial(new double[]{0,1})));
+//		
+//	    	if(statusTracker!=null)
+//	    		statusTracker.updateStatus("Find eigenvalues: get determinant", 0, 0.25);
+//			DoublePolynomial determinant = eigensystem.getDeterminant();
+//	    	if(statusTracker!=null)
+//	    		statusTracker.updateStatus("Find eigenvalues: find zeros of polynomial", 0, 0.5);
+//			eigenvalueList = determinant.findZeros();
+//			System.out.println(determinant.toString());
+//		}
+//		else {
+			ArithmeticMatrix<ArithmeticPolynomial<Quadruple>> eigensystem=createQuadrupleEigenvalueEquationMatrix(matrix);
+			ArithmeticMatrix<DoublePolynomial> m = ArithmeticMatrix.createDoublePolynomialMatrix(matrix);
+		
+	    	if(statusTracker!=null)
+	    		statusTracker.updateStatus("Find eigenvalues: get determinant", 0, 0.25);
+	    	ArithmeticPolynomial<Quadruple> determinant = eigensystem.getDeterminant();
+			System.out.println(determinant);
+	    	if(statusTracker!=null)
+	    		statusTracker.updateStatus("Find eigenvalues: find zeros of polynomial", 0, 0.5);
+	    	List<Quadruple> qEigenvalueList = determinant.findZeros();
+	    	eigenvalueList = new ArrayList<Double>();
+	    	for(Quadruple q:qEigenvalueList) {
+	    		eigenvalueList.add(q.doubleValue());
+	    	}
+//		}
+		
 		int i=0;
 		for(Double d:eigenvalueList) {
 	    	if(statusTracker!=null)
-	    		statusTracker.updateStatus("Find eigenvectors", i/(double)eigenvalueList.size(), 0.6);
+	    		statusTracker.updateStatus("Find eigenvectors", i/(double)eigenvalueList.size(), 0.75);
 			eigenvalues[i]=d;
 			eigenvectors[i]=getEigenvector(d,matrix);
 		    i++;
@@ -440,6 +498,21 @@ public class DoubleMatrix {
     		statusTracker.updateStatus("Done", 0, 1);
 		return new Eigensystem(eigenvalues,eigenvectors);
 	}
+
+    private static ArithmeticMatrix<ArithmeticPolynomial<Quadruple>> createQuadrupleEigenvalueEquationMatrix(double[][] matrix) throws IllegalArgumentException {
+    	ArithmeticPolynomial<Quadruple>[][] m = (ArithmeticPolynomial<Quadruple>[][])new ArithmeticPolynomial[matrix.length][matrix[0].length];
+		int i,j;
+		Quadruple negativeOne = new Quadruple(-1);
+		for(i = 0;i<m.length;i++) {
+			for(j = 0;j<m[0].length;j++) {
+				if(i==j)
+					m[i][j] = new ArithmeticPolynomial<Quadruple>(new Quadruple[] {new Quadruple(matrix[i][j]),negativeOne},negativeOne);
+				else
+					m[i][j] = new ArithmeticPolynomial<Quadruple>(new Quadruple[] {new Quadruple(matrix[i][j])},negativeOne);
+			}
+		}
+		return new ArithmeticMatrix<ArithmeticPolynomial<Quadruple>>(m);
+    }
     
 //    private Eigensystem getEigensystemByPowerMethod() {
 //    	HashSet<GershgorinGroup> groups = new HashSet<>();

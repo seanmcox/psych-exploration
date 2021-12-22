@@ -2,6 +2,8 @@ package com.shtick.math.statistics.test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
+
 import org.junit.jupiter.api.Test;
 
 import com.shtick.math.statistics.DoubleMatrix;
@@ -91,6 +93,49 @@ class DoubleMatrixTest {
 			DoubleMatrix matrix = new DoubleMatrix(new double[][] {{1,1,1,1},{1,1,1,2},{1,1,3,3},{1,4,4,4}});
 			double determinant = matrix.getDeterminant();
 			assertEqualsWithinMargin(-6, determinant, ""+(-6)+"="+determinant);
+		}
+
+		{ // 5x5 case
+			DoubleMatrix matrix = new DoubleMatrix(new double[][] {{1,2,3,4,5},{2,4,4,5,6},{3,4,7,6,7},{4,5,6,10,8},{5,6,7,8,13}});
+			double determinant = matrix.getDeterminant();
+			assertEqualsWithinMargin(-216, determinant, ""+(-216)+"="+determinant);
+		}
+
+		{ // 2nd 5x5 case
+			DoubleMatrix matrix = new DoubleMatrix(new double[][] {{-6,-3,-2,-1,0},{-3,-3,-1,0,1},{-2,-1,0,1,2},{-1,0,1,3,3},{0,1,2,3,6}});
+			double determinant = matrix.getDeterminant();
+			assertEqualsWithinMargin(1.77635683940025E-15, determinant, ""+(1.77635683940025E-15)+"="+determinant);
+		}
+
+		{ // 3rd 5x5 case
+			DoubleMatrix matrix = new DoubleMatrix(new double[][] {{-0.61,-3,-0.22,-1,0.03},{-3,-0.34,-1,0.05,1},{-0.26,-1,0.07,1,0.28},{-1,0.09,1,0.3,3},{0.01,1,0.22,3,0.63}});
+			double determinant = matrix.getDeterminant();
+			assertEqualsWithinMargin(4.575367541, determinant, ""+(4.575367541)+"="+determinant);
+		}
+
+		{ // 4th 5x5 case
+			DoubleMatrix matrix = new DoubleMatrix(new double[][] {
+				{2.9536729106383066, -0.7848049354590572, -0.8722520790355663, -1.1794750224630839, -0.6088192691845157},
+				{-0.7848049354590572, 2.926003170065958, 1.4354217988876488, 1.1835865529248915, 0.9406825915525476},
+				{-0.8722520790355663, 1.4354217988876488, 3.105852800247565, 1.143519357163422, 1.1115887819463408},
+				{-1.1794750224630839, 1.1835865529248915, 1.143519357163422, 2.9946440555071696, 0.6974983537999642},
+				{-0.6088192691845157, 0.9406825915525476, 1.1115887819463408, 0.6974983537999642, 3.3865066618536717}
+			});
+			double determinant = matrix.getDeterminant();
+			assertEqualsWithinMargin(116.43935355777167, determinant, ""+(116.43935355777167)+"="+determinant);
+		}
+
+		{ // 6x6 case
+			DoubleMatrix matrix = new DoubleMatrix(new double[][] {
+				{2.9536729106383066, -0.7848049354590572, -0.8722520790355663, -1.1794750224630839, -0.6088192691845157,-1.2162845561497264},
+				{-0.7848049354590572, 2.926003170065958, 1.4354217988876488, 1.1835865529248915, 0.9406825915525476, 1.2056741402335935},
+				{-0.8722520790355663, 1.4354217988876488, 3.105852800247565, 1.143519357163422, 1.1115887819463408, 1.3674230472037368},
+				{-1.1794750224630839, 1.1835865529248915, 1.143519357163422, 2.9946440555071696, 0.6974983537999642, 1.9613206884976744},
+				{-0.6088192691845157, 0.9406825915525476, 1.1115887819463408, 0.6974983537999642, 3.3865066618536717, 0.8071688738919389},
+				{-1.2162845561497264, 1.2056741402335935, 1.3674230472037368, 1.9613206884976744, 0.8071688738919389, 3.201729951257849}
+			});
+			double determinant = matrix.getDeterminant();
+			assertEqualsWithinMargin(198.61985291914604, determinant, ""+(198.61985291914604)+"="+determinant);
 		}
 
 		{ // Non-square case
@@ -202,6 +247,7 @@ class DoubleMatrixTest {
 
 		{ // 2x2 case
 			DoubleMatrix matrix = new DoubleMatrix(new double[][] {{1,2},{3,4}});
+			// Expected eigenvalues: 5.372281323269014, -0.3722813232690143
 			Eigensystem eigensystem = matrix.getEigensystem();
 			assertEquals(2, eigensystem.eigenvalues.length);
 			for(int i=0;i<eigensystem.eigenvalues.length;i++) {
@@ -214,6 +260,7 @@ class DoubleMatrixTest {
 
 		{ // 3x3 case
 			DoubleMatrix matrix = new DoubleMatrix(new double[][] {{3,4,-2},{1,4,-1},{2,6,-1}});
+			// Expected eigenvalues: 3, 2, 1
 			// https://study.com/academy/lesson/eigenvalues-eigenvectors-definition-equation-examples.html
 			Eigensystem eigensystem = matrix.getEigensystem();
 			assertEquals(3, eigensystem.eigenvalues.length);
@@ -225,15 +272,58 @@ class DoubleMatrixTest {
 			}
 		}
 
-		{ // 3rd 4x4 case
-			DoubleMatrix matrix = new DoubleMatrix(new double[][] {{1,1,1,1},{1,1,1,2},{1,1,3,3},{1,4,4,4}});
+		{ // 3x3 case
+			DoubleMatrix matrix = new DoubleMatrix(new double[][] {{3,4,-2},{0,4,-1},{0,6,-1}});
+			// https://study.com/academy/lesson/eigenvalues-eigenvectors-definition-equation-examples.html
 			Eigensystem eigensystem = matrix.getEigensystem();
-			assertEquals(4, eigensystem.eigenvalues.length);
+			assertEquals(3, eigensystem.eigenvalues.length);
 			for(int i=0;i<eigensystem.eigenvalues.length;i++) {
 				DoubleMatrix columnEigenvector = new DoubleMatrix(new double[][] {eigensystem.eigenvectors[i]}).getTranspose();
 				DoubleMatrix operationResult = matrix.operate(columnEigenvector);
 				DoubleMatrix expectedResult = columnEigenvector.multiplyBy(eigensystem.eigenvalues[i]);
 				assertZeroMatrixWithinMargin(operationResult.subtract(expectedResult),"Failed to validate eigenvector for eigenvalue, "+eigensystem.eigenvalues[i]);
+			}
+		}
+
+		DoubleMatrix[] matrices = new DoubleMatrix[]{
+				new DoubleMatrix(new double[][] {
+					{2.9536729106383066, -0.7848049354590572, -0.8722520790355663, -1.1794750224630839},
+					{-0.7848049354590572, 2.926003170065958, 1.4354217988876488, 1.1835865529248915},
+					{-0.8722520790355663, 1.4354217988876488, 3.105852800247565, 1.143519357163422},
+					{-1.1794750224630839, 1.1835865529248915, 1.143519357163422, 2.9946440555071696},
+				}),
+//				new DoubleMatrix(new double[][] {{1,2,3,4,5},{2,4,4,5,6},{3,4,7,6,7},{4,5,6,10,8},{5,6,7,8,13}}),
+				new DoubleMatrix(new double[][] {
+					{2.9536729106383066, -0.7848049354590572, -0.8722520790355663, -1.1794750224630839, -0.6088192691845157},
+					{-0.7848049354590572, 2.926003170065958, 1.4354217988876488, 1.1835865529248915, 0.9406825915525476},
+					{-0.8722520790355663, 1.4354217988876488, 3.105852800247565, 1.143519357163422, 1.1115887819463408},
+					{-1.1794750224630839, 1.1835865529248915, 1.143519357163422, 2.9946440555071696, 0.6974983537999642},
+					{-0.6088192691845157, 0.9406825915525476, 1.1115887819463408, 0.6974983537999642, 3.3865066618536717}
+				}),
+				new DoubleMatrix(new double[][] {
+					{2.9536729106383066, -0.7848049354590572, -0.8722520790355663, -1.1794750224630839, -0.6088192691845157,-1.2162845561497264},
+					{-0.7848049354590572, 2.926003170065958, 1.4354217988876488, 1.1835865529248915, 0.9406825915525476, 1.2056741402335935},
+					{-0.8722520790355663, 1.4354217988876488, 3.105852800247565, 1.143519357163422, 1.1115887819463408, 1.3674230472037368},
+					{-1.1794750224630839, 1.1835865529248915, 1.143519357163422, 2.9946440555071696, 0.6974983537999642, 1.9613206884976744},
+					{-0.6088192691845157, 0.9406825915525476, 1.1115887819463408, 0.6974983537999642, 3.3865066618536717, 0.8071688738919389},
+					{-1.2162845561497264, 1.2056741402335935, 1.3674230472037368, 1.9613206884976744, 0.8071688738919389, 3.201729951257849}
+				}),
+		};
+		for(DoubleMatrix matrix:matrices){
+			String testCaseDescription = ""+matrix.getRows()+"x"+matrix.getColumns();
+			Eigensystem eigensystem=null;
+			try {
+				eigensystem = matrix.getEigensystem();
+			}
+			catch(Throwable t) {
+				fail(testCaseDescription+" failure",t);
+			}
+			assertEquals(matrix.getRows(), eigensystem.eigenvalues.length);
+			for(int i=0;i<eigensystem.eigenvalues.length;i++) {
+				DoubleMatrix columnEigenvector = new DoubleMatrix(new double[][] {eigensystem.eigenvectors[i]}).getTranspose();
+				DoubleMatrix operationResult = matrix.operate(columnEigenvector);
+				DoubleMatrix expectedResult = columnEigenvector.multiplyBy(eigensystem.eigenvalues[i]);
+				assertZeroMatrixWithinMargin(operationResult.subtract(expectedResult),testCaseDescription+" - Failed to validate eigenvector for eigenvalue, "+eigensystem.eigenvalues[i]);
 			}
 		}
 

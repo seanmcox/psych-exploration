@@ -10,6 +10,7 @@
 package com.shtick.math.statistics;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,18 +18,27 @@ import java.util.List;
  *
  * @author seanmcox
  */
-public class Polynomial{
-    protected double[] coefficients;
+public class DoublePolynomial implements Polynomial<Double>, ArithmeticObject<DoublePolynomial>{
+	/**
+	 * 
+	 */
+	public static final DoublePolynomial UNIT = new DoublePolynomial(new double[] {1});
+	/**
+	 * 
+	 */
+	public static final DoublePolynomial ZERO = new DoublePolynomial(new double[0]);
+
+	protected double[] coefficients;
     
     /**
      * @param args
      */
     public static void main(String[] args){
-		Polynomial p1=new Polynomial(new double[] {1,1});
-		Polynomial p2=new Polynomial(new double[] {25,1});
-		Polynomial p3=new Polynomial(new double[] {-6,1});
+		DoublePolynomial p1=new DoublePolynomial(new double[] {1,1});
+		DoublePolynomial p2=new DoublePolynomial(new double[] {25,1});
+		DoublePolynomial p3=new DoublePolynomial(new double[] {-6,1});
 		
-		Polynomial p=p1.multiply(p2).multiply(p3);
+		DoublePolynomial p=p1.multiply(p2).multiply(p3);
 		
 		System.out.print("p1=");
 		p1.print();
@@ -63,20 +73,31 @@ public class Polynomial{
      * @param start the beginning index of the polynomial coefficients.
      * @param size the number of coefficients to copy.
      */
-    public Polynomial(double[] coefficients, int start, int size) {
+    public DoublePolynomial(double[] coefficients, int start, int size) {
 		this.coefficients = new double[size];
 		System.arraycopy(coefficients,start,this.coefficients,0,size);
     }
+    
     /**
      * Creates a Polynomial using the given coefficients. (Doesn't make a copy.)
      *
      * @param coefficients a list of integer coefficients starting with the constant component.
      */
-    public Polynomial(double[] coefficients) {
+    public DoublePolynomial(double[] coefficients) {
 		this.coefficients = coefficients;
     }
     
-    /**
+    @Override
+	public DoublePolynomial getZero() {
+		return ZERO;
+	}
+
+	@Override
+	public DoublePolynomial getIdentity() {
+		return UNIT;
+	}
+
+	/**
      * 
      * @param i
      * @return returns c_i from the the c_i*x^i element of the polynomial.
@@ -91,7 +112,7 @@ public class Polynomial{
      * @param p
      * @return The multiplied polynomial.
      */
-    public Polynomial multiply(Polynomial p){
+    public DoublePolynomial multiply(DoublePolynomial p){
     	return multiply(p.coefficients);
     }
     
@@ -99,22 +120,39 @@ public class Polynomial{
      * @param p
      * @return The multiplied polynomial.
      */
-    public Polynomial multiply(double[] p){
+    public DoublePolynomial multiply(double[] p){
     	if((p.length==0)||(coefficients.length==0))
-    		return new Polynomial(new double[0]);
+    		return new DoublePolynomial(new double[0]);
 		double[] c = new double[p.length + coefficients.length - 1];
 		int i,j;
 		for(i = 0;i<coefficients.length;i++)
-		    for(j = 0;j<p.length;j++)
+		    for(j = 0;j<p.length;j++) {
 		    	c[i+j]+=coefficients[i]*p[j];
-		return new Polynomial(c);
+			    if(Double.isNaN(c[i+j])) {
+			    	System.err.println("Multiplier 1: "+Arrays.toString(p));
+			    	System.err.println("Multiplier 2: "+Arrays.toString(this.coefficients));
+			    	System.err.println("Index 1: "+j);
+			    	System.err.println("Index 2: "+i);
+			    	System.err.flush();
+			    	throw new RuntimeException("NaN Found (multiply)!");
+			    }
+			    if(Double.isInfinite(c[i+j])) {
+			    	System.err.println("Multiplier 1: "+Arrays.toString(p));
+			    	System.err.println("Multiplier 2: "+Arrays.toString(this.coefficients));
+			    	System.err.println("Index 1: "+j);
+			    	System.err.println("Index 2: "+i);
+			    	System.err.flush();
+			    	throw new RuntimeException("Infinite Found (multiply)!");
+			    }
+		    }
+		return new DoublePolynomial(c);
     }
 
     /**
      * @param p
      * @return The divided polynomial. All remainders are lost.
      */
-    public Polynomial divide(Polynomial p){
+    public DoublePolynomial divide(DoublePolynomial p){
     	return divide(p.coefficients);
     }
     
@@ -122,9 +160,9 @@ public class Polynomial{
      * @param p
      * @return The divided polynomial. All remainders are lost.
      */
-    public Polynomial divide(double[] p){
+    public DoublePolynomial divide(double[] p){
 		if(p.length>coefficients.length)
-		    return new Polynomial(new double[0]);
+		    return new DoublePolynomial(new double[0]);
 		double[] temp = new double[coefficients.length];
 		System.arraycopy(coefficients,0,temp,0,coefficients.length);
 		int i,j;
@@ -136,14 +174,14 @@ public class Polynomial{
 		    	temp[i+j]-=p[j]*c[i];
 		}
 		
-		return new Polynomial(c);
+		return new DoublePolynomial(c);
     }
 
     /**
      * @param p
      * @return The resulting polynomial.
      */
-    public Polynomial add(Polynomial p){
+    public DoublePolynomial add(DoublePolynomial p){
 		return add(p.coefficients);
     }
     
@@ -151,21 +189,36 @@ public class Polynomial{
      * @param p
      * @return The resulting polynomial.
      */
-    public Polynomial add(double[] p){
+    public DoublePolynomial add(double[] p){
 		double[] c = new double[Math.max(p.length,coefficients.length)];
 		int i;
 		for(i = 0;i<coefficients.length;i++)
 		    c[i]=coefficients[i];
-		for(i = 0;i<p.length;i++)
+		for(i = 0;i<p.length;i++) {
 		    c[i]+=p[i];
-		return new Polynomial(c);
+		    if(Double.isNaN(c[i])) {
+		    	System.err.println("Adder 1: "+Arrays.toString(p));
+		    	System.err.println("Adder 2: "+Arrays.toString(this.coefficients));
+		    	System.err.println("Problem index: "+i);
+		    	System.err.flush();
+		    	throw new RuntimeException("NaN Found (add)!");
+		    }
+		    if(Double.isInfinite(c[i])) {
+		    	System.err.println("Adder 1: "+Arrays.toString(p));
+		    	System.err.println("Adder 2: "+Arrays.toString(this.coefficients));
+		    	System.err.println("Problem index: "+i);
+		    	System.err.flush();
+		    	throw new RuntimeException("Infinite Found (add)!");
+		    }
+		}
+		return new DoublePolynomial(c);
     }
     
     /**
      * @param p
      * @return The resulting polynomial.
      */
-    public Polynomial subtract(Polynomial p){
+    public DoublePolynomial subtract(DoublePolynomial p){
     	return subtract(p.coefficients);
     }
     
@@ -173,33 +226,44 @@ public class Polynomial{
      * @param p
      * @return The resulting polynomial.
      */
-    public Polynomial subtract(double[] p){
+    public DoublePolynomial subtract(double[] p){
 		double[] c = new double[Math.max(p.length,coefficients.length)];
 		int i;
 		for(i = 0;i<coefficients.length;i++)
 		    c[i]=coefficients[i];
-		for(i = 0;i<p.length;i++)
+		for(i = 0;i<p.length;i++) {
 		    c[i]-=p[i];
-		return new Polynomial(c);
+		    if(Double.isNaN(c[i])) {
+		    	System.err.println("Subtracter 1: "+Arrays.toString(p));
+		    	System.err.println("Subtracter 2: "+Arrays.toString(this.coefficients));
+		    	System.err.println("Problem index: "+i);
+		    	System.err.flush();
+		    	throw new RuntimeException("NaN Found (subtract)!");
+		    }
+		    if(Double.isInfinite(c[i])) {
+		    	System.err.println("Subtracter 1: "+Arrays.toString(p));
+		    	System.err.println("Subtracter 2: "+Arrays.toString(this.coefficients));
+		    	System.err.println("Problem index: "+i);
+		    	System.err.flush();
+		    	throw new RuntimeException("Infinite Found (subtract)!");
+		    }
+		}
+		return new DoublePolynomial(c);
     }
     
     /**
      * @return The resulting polynomial.
      */
-    public Polynomial derivative(){
+    public DoublePolynomial derivative(){
     	if(coefficients.length==0)
     		return this;
 		double[] c = new double[coefficients.length-1];
 		int i;
 		for(i = 1;i<=c.length;i++)
 		    c[i-1]=coefficients[i]*i;
-		return new Polynomial(c);
+		return new DoublePolynomial(c);
     }
     
-    /**
-     * @return A collection of values that would evaluate to zero in the polynomial. Null if all point would be zero. (Empty polynomial.)
-     * @throws Throwable
-     */
     public List<Double> findZeros() throws Throwable{
 		compact();
 		if(coefficients.length==0)
@@ -211,7 +275,7 @@ public class Polynomial{
 		    retVal.add(-coefficients[0]/coefficients[1]);
 		}
 		if(coefficients[0]==0){ // Simplifying case: 0-constant
-		    Polynomial p= new Polynomial(coefficients,1,coefficients.length-1);
+		    DoublePolynomial p= new DoublePolynomial(coefficients,1,coefficients.length-1);
 		    List<Double> retval = p.findZeros();
 		    retval.add(0.0);
 		    return retval;
@@ -233,7 +297,7 @@ public class Polynomial{
 				double[] newCoefficients = new double[(coefficients.length-1)/gcd+1];
 				for(int i=0;i<newCoefficients.length;i++) 
 					newCoefficients[i]=coefficients[i*gcd];
-				Polynomial substitute = new Polynomial(newCoefficients);
+				DoublePolynomial substitute = new DoublePolynomial(newCoefficients);
 				List<Double> subzeros = substitute.findZeros();
 				List<Double> retval = new LinkedList<Double>();
 				for(Double subzero:subzeros) {
@@ -282,7 +346,7 @@ public class Polynomial{
 		// Now it is time for Newton's method.
 		double root = newtonsMethod();
 		// divide out the root and continue recursively.
-		Polynomial p = divide(new Polynomial(new double[]{root,-1.0}));
+		DoublePolynomial p = divide(new DoublePolynomial(new double[]{root,-1.0}));
 		List<Double> retVal = p.findZeros();
 		retVal.add(root);
 		return retVal;
@@ -325,7 +389,7 @@ public class Polynomial{
     }
     
     protected double newtonsMethod(double startPos) throws Throwable{
-		Polynomial dp = derivative();
+		DoublePolynomial dp = derivative();
 		double lastPos=startPos;
 		double currentPos=startPos;
 		double last=getValue(currentPos);

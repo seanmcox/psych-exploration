@@ -6,15 +6,15 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.shtick.math.statistics.Polynomial;
+import com.shtick.math.statistics.DoublePolynomial;
 
-class PolynomialTest {
+class DoublePolynomialTest {
 	private static final double ERROR_MARGIN = 0.00001;
 
 	@Test
 	void testConstructorAndFindZeros() {
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {});
+			DoublePolynomial p = new DoublePolynomial(new double[] {});
 			try {
 				List<Double> zeros = p.findZeros();
 				assertNull(zeros,"All points are zeros.");
@@ -28,7 +28,7 @@ class PolynomialTest {
 		}
 
 		{ // Constant case
-			Polynomial p = new Polynomial(new double[] {5});
+			DoublePolynomial p = new DoublePolynomial(new double[] {5});
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(0, zeros.size(),"No points are zeros.");
@@ -42,7 +42,7 @@ class PolynomialTest {
 		}
 
 		{ // Linear case
-			Polynomial p = new Polynomial(new double[] {5,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {5,1});
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(1, zeros.size(),"One point is a zero.");
@@ -57,7 +57,7 @@ class PolynomialTest {
 		}
 
 		{ // Parabolic case
-			Polynomial p = new Polynomial(new double[] {-4,0,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {-4,0,1});
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(2, zeros.size(),"Two points are zeros.");
@@ -74,7 +74,7 @@ class PolynomialTest {
 		}
 
 		{ // Parabolic case with 0 constant.
-			Polynomial p = new Polynomial(new double[] {0,5,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {0,5,1});
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(2, zeros.size(),"Two points are zeros.");
@@ -91,7 +91,7 @@ class PolynomialTest {
 		}
 
 		{ // Simplifiable 3-factor case.
-			Polynomial p = new Polynomial(new double[] {-20,0,1,0,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {-20,0,1,0,1});
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(2, zeros.size(),"Two points are zeros.");
@@ -108,7 +108,7 @@ class PolynomialTest {
 		}
 
 		{ // 4-factor case. (Forcing newton's method.)
-			Polynomial p = new Polynomial(new double[] {1,1,1,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {1,1,1,1});
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(1, zeros.size(),"One point is zeros.");
@@ -123,7 +123,7 @@ class PolynomialTest {
 		}
 
 		{ // 4-factor case. (Forcing newton's method.) 0-slope at origin and no zeros.
-			Polynomial p = new Polynomial(new double[] {1,0,1,0,1,0,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {1,0,1,0,1,0,1});
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(0, zeros.size(),"no zeros.");
@@ -137,7 +137,7 @@ class PolynomialTest {
 		}
 
 		{ // 4-factor case. (Forcing newton's method.) 0-slope at origin and two zeros around origin.
-			Polynomial p = new Polynomial(new double[] {-1,0,1,0,1,0,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {-1,0,1,0,1,0,1});
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(2, zeros.size(),"Two points are zeros.");
@@ -157,7 +157,7 @@ class PolynomialTest {
 	@Test
 	void testAdd() {
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {});
+			DoublePolynomial p = new DoublePolynomial(new double[] {});
 			p=p.add(new double[] {5,1});
 			try {
 				List<Double> zeros = p.findZeros();
@@ -172,8 +172,8 @@ class PolynomialTest {
 		}
 
 		{ // Parabolic case
-			Polynomial p = new Polynomial(new double[] {-4,0,1});
-			p=p.add(new Polynomial(new double[] {0,0,1}));
+			DoublePolynomial p = new DoublePolynomial(new double[] {-4,0,1});
+			p=p.add(new DoublePolynomial(new double[] {0,0,1}));
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(2, zeros.size(),"Two points are zeros.");
@@ -193,7 +193,7 @@ class PolynomialTest {
 	@Test
 	void testSubtract() {
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {});
+			DoublePolynomial p = new DoublePolynomial(new double[] {});
 			p=p.subtract(new double[] {5,1});
 			try {
 				List<Double> zeros = p.findZeros();
@@ -208,8 +208,8 @@ class PolynomialTest {
 		}
 
 		{ // Parabolic case
-			Polynomial p = new Polynomial(new double[] {-4,0,1});
-			p=p.subtract(new Polynomial(new double[] {0,0,1}));
+			DoublePolynomial p = new DoublePolynomial(new double[] {-4,0,1});
+			p=p.subtract(new DoublePolynomial(new double[] {0,0,1}));
 			try {
 				List<Double> zeros = p.findZeros();
 				assertEquals(0, zeros.size(),"No points are zeros.");
@@ -224,7 +224,7 @@ class PolynomialTest {
 	@Test
 	void testMultiply() {
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {});
+			DoublePolynomial p = new DoublePolynomial(new double[] {});
 			p=p.multiply(new double[] {5,1});
 			try {
 				List<Double> zeros = p.findZeros();
@@ -236,7 +236,7 @@ class PolynomialTest {
 			}
 		}
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {1});
 			p=p.multiply(new double[] {5,1});
 			try {
 				List<Double> zeros = p.findZeros();
@@ -250,7 +250,7 @@ class PolynomialTest {
 			}
 		}
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {0,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {0,1});
 			p=p.multiply(new double[] {5,1});
 			try {
 				List<Double> zeros = p.findZeros();
@@ -270,7 +270,7 @@ class PolynomialTest {
 	@Test
 	void testDivide() {
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {});
+			DoublePolynomial p = new DoublePolynomial(new double[] {});
 			p=p.divide(new double[] {5,1});
 			try {
 				List<Double> zeros = p.findZeros();
@@ -283,7 +283,7 @@ class PolynomialTest {
 		}
 		
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {5,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {5,1});
 			p=p.divide(new double[] {5,1});
 			try {
 				List<Double> zeros = p.findZeros();
@@ -297,7 +297,7 @@ class PolynomialTest {
 			}
 		}
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {0,5,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {0,5,1});
 			p=p.divide(new double[] {5,1});
 			try {
 				List<Double> zeros = p.findZeros();
@@ -314,7 +314,7 @@ class PolynomialTest {
 	@Test
 	void testDerivative() {
 		{ // Empty case
-			Polynomial p = new Polynomial(new double[] {});
+			DoublePolynomial p = new DoublePolynomial(new double[] {});
 			try {
 				p=p.derivative();
 				List<Double> zeros = p.findZeros();
@@ -329,7 +329,7 @@ class PolynomialTest {
 		}
 
 		{ // Constant case
-			Polynomial p = new Polynomial(new double[] {5});
+			DoublePolynomial p = new DoublePolynomial(new double[] {5});
 			try {
 				p=p.derivative();
 				List<Double> zeros = p.findZeros();
@@ -344,7 +344,7 @@ class PolynomialTest {
 		}
 
 		{ // Linear case
-			Polynomial p = new Polynomial(new double[] {5,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {5,1});
 			try {
 				p=p.derivative();
 				List<Double> zeros = p.findZeros();
@@ -359,7 +359,7 @@ class PolynomialTest {
 		}
 
 		{ // Parabolic case
-			Polynomial p = new Polynomial(new double[] {-4,0,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {-4,0,1});
 			try {
 				p=p.derivative();
 				List<Double> zeros = p.findZeros();
@@ -375,7 +375,7 @@ class PolynomialTest {
 		}
 
 		{ // Parabolic case with 0 constant.
-			Polynomial p = new Polynomial(new double[] {0,5,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {0,5,1});
 			try {
 				p=p.derivative();
 				List<Double> zeros = p.findZeros();
@@ -391,7 +391,7 @@ class PolynomialTest {
 		}
 
 		{ // Simplifiable 3-factor case.
-			Polynomial p = new Polynomial(new double[] {-20,0,1,0,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {-20,0,1,0,1});
 			try {
 				p=p.derivative();
 				List<Double> zeros = p.findZeros();
@@ -407,7 +407,7 @@ class PolynomialTest {
 		}
 
 		{ // 4-factor case. (Forcing newton's method.)
-			Polynomial p = new Polynomial(new double[] {1,1,1,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {1,1,1,1});
 			try {
 				p=p.derivative();
 				List<Double> zeros = p.findZeros();
@@ -422,7 +422,7 @@ class PolynomialTest {
 		}
 
 		{ // 4-factor case. (Forcing newton's method.) 0-slope at origin and no zeros.
-			Polynomial p = new Polynomial(new double[] {1,0,1,0,1,0,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {1,0,1,0,1,0,1});
 			try {
 				p=p.derivative();
 				List<Double> zeros = p.findZeros();
@@ -438,7 +438,7 @@ class PolynomialTest {
 		}
 
 		{ // 4-factor case. (Forcing newton's method.) 0-slope at origin and two zeros around origin.
-			Polynomial p = new Polynomial(new double[] {-1,0,1,0,1,0,1});
+			DoublePolynomial p = new DoublePolynomial(new double[] {-1,0,1,0,1,0,1});
 			try {
 				p=p.derivative();
 				List<Double> zeros = p.findZeros();
