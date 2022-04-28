@@ -456,34 +456,30 @@ public class DoubleMatrix {
 		Quadruple biggestDouble = new Quadruple(Double.MAX_VALUE);
 	
 		List<Double> eigenvalueList;
-//		if(bigNumber.compareTo(biggestDouble)<0) {
-//			ArithmeticMatrix<DoublePolynomial> m = ArithmeticMatrix.createDoublePolynomialMatrix(matrix);
-//			ArithmeticMatrix<DoublePolynomial> eigensystem=m.subtract(ArithmeticMatrix.<DoublePolynomial>createScalingMatrix(m.getRows(),new DoublePolynomial(new double[]{0,1})));
-//		
-//	    	if(statusTracker!=null)
-//	    		statusTracker.updateStatus("Find eigenvalues: get determinant", 0, 0.25);
-//			DoublePolynomial determinant = eigensystem.getDeterminant();
-//	    	if(statusTracker!=null)
-//	    		statusTracker.updateStatus("Find eigenvalues: find zeros of polynomial", 0, 0.5);
-//			eigenvalueList = determinant.findZeros();
-//			System.out.println(determinant.toString());
-//		}
-//		else {
-			ArithmeticMatrix<ArithmeticPolynomial<Quadruple>> eigensystem=createQuadrupleEigenvalueEquationMatrix(matrix);
+		if(bigNumber.compareTo(biggestDouble)<0) {
 			ArithmeticMatrix<DoublePolynomial> m = ArithmeticMatrix.createDoublePolynomialMatrix(matrix);
+			ArithmeticMatrix<DoublePolynomial> eigensystem=m.subtract(ArithmeticMatrix.<DoublePolynomial>createScalingMatrix(m.getRows(),new DoublePolynomial(new double[]{0,1})));
+		
+	    	if(statusTracker!=null)
+	    		statusTracker.updateStatus("Find eigenvalues: get determinant", 0, 0.25);
+			DoublePolynomial determinant = eigensystem.getDeterminant();
+	    	if(statusTracker!=null)
+	    		statusTracker.updateStatus("Find eigenvalues: find zeros of polynomial", 0, 0.5);
+			eigenvalueList = determinant.findZeros();
+		}
+		else {
+			ArithmeticMatrix<ArithmeticPolynomial<Quadruple>> eigensystem=createQuadrupleEigenvalueEquationMatrix(matrix);
 		
 	    	if(statusTracker!=null)
 	    		statusTracker.updateStatus("Find eigenvalues: get determinant", 0, 0.25);
 	    	ArithmeticPolynomial<Quadruple> determinant = eigensystem.getDeterminant();
-			System.out.println(determinant);
 	    	if(statusTracker!=null)
 	    		statusTracker.updateStatus("Find eigenvalues: find zeros of polynomial", 0, 0.5);
 	    	List<Quadruple> qEigenvalueList = determinant.findZeros();
 	    	eigenvalueList = new ArrayList<Double>();
-	    	for(Quadruple q:qEigenvalueList) {
+	    	for(Quadruple q:qEigenvalueList)
 	    		eigenvalueList.add(q.doubleValue());
-	    	}
-//		}
+		}
 		
 		int i=0;
 		for(Double d:eigenvalueList) {
@@ -564,13 +560,14 @@ public class DoubleMatrix {
     	boolean[] rowPicked = new boolean[m.length];
     	int retvalCalculatedCount=0;
     	double[] rowSum = new double[m.length];
-    	int nonzeroRowCount=0;
+    	int nonzeroRowCount=0; // Tracking the number of rows where v*m2 (m2 is actively getting reduced) has a non-zero value in that row of the resulting vector
     	int[] rowComplexity = new int[m.length];
     	int[] columnComplexity = new int[m.length];
     	boolean hasOne=false; // True if there is a row with a row complexity of 1 and false otherwise.
     	// Get some row/column statistics
     	for(int row=0;row<m2.length;row++){
     		for(int col=0;col<m2.length;col++) {
+    			// TODO retvalCalculated appears unneeded here
     			if((m2[row][col]!=0)&&(!retvalCalculated[col])) {
     				rowComplexity[row]++;
     				columnComplexity[col]++;
@@ -588,6 +585,7 @@ public class DoubleMatrix {
     		}
     	}
     	// Look for a harder answer.
+    	// Solve v(M - lI)=0 (l being the eigenvalue)
     	while(retvalCalculatedCount<m2.length) {
     		if(hasOne) {
 		    	for(i=0;i<m2.length;i++){
@@ -598,6 +596,7 @@ public class DoubleMatrix {
 		    					col=j;
 			    			}
 			    		}
+			    		// for v(M - lI)=0, the rowsum starts as zero
 						retval[col] = rowSum[i]/m2[i][col];
 						retvalCalculated[col] = true;
 						retvalCalculatedCount++;
@@ -620,22 +619,17 @@ public class DoubleMatrix {
     		else {
     			int complexCol=-1;
     			int complexity=0;
+    			// We want to identify the column with the most values so that we get the biggest bang for our buck.
     			for(int col=0;col<m2.length;col++) {
     				if(retvalCalculated[col])
     					continue;
-    				if(complexCol<0) {
+    				if((complexCol<0)||(columnComplexity[col]>complexity)) {
     					complexCol = col;
     					complexity = columnComplexity[col];
     				}
-    				else {
-    					if(columnComplexity[col]>complexity) {
-        					complexCol = col;
-        					complexity = columnComplexity[col];
-    					}
-    				}
     			}
     			if(complexity==1) {
-    				throw new RuntimeException("Ran into an interesting case that may need further investigation;");
+    				throw new RuntimeException("Ran into an interesting case that may need further investigation.");
     			}
     			if(complexity==0) {
 					retvalCalculatedCount++;
@@ -673,6 +667,9 @@ public class DoubleMatrix {
     		    				pickedRowComplexity = rowComplexity[i];
     		    			}
     		    		}
+    		    	}
+    		    	if(pickedRow<0) {
+        				throw new RuntimeException("Ran into an interesting case that may need further investigation. See Case1 in unit test for DoubleMatrix.");
     		    	}
     		    	rowPicked[pickedRow] = true;
 

@@ -8,7 +8,7 @@ import com.shtick.math.statistics.Quadruple;
 
 class QuadrupleTest {
 	private static final double ERROR_MARGIN_D = 0.00001;
-	private static final Quadruple ERROR_MARGIN_Q = new Quadruple(ERROR_MARGIN_D);
+	private static final Quadruple ERROR_MARGIN_Q = new Quadruple(ERROR_MARGIN_D*ERROR_MARGIN_D);
 
 	@Test
 	void testConstructor() {
@@ -334,6 +334,8 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.multiply(r);
 				assertEquals(20,m.intValue());
+				assertEquals(new Quadruple(5*0x100000000L,0,false), q, "q not modified");
+				assertEquals(new Quadruple(4*0x100000000L,0,false), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -347,6 +349,8 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.multiply(r);
 				assertEquals(20,m.intValue());
+				assertEquals(new Quadruple(5*0x100000000L,0,true), q, "q not modified");
+				assertEquals(new Quadruple(4*0x100000000L,0,true), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -360,6 +364,8 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.multiply(r);
 				assertEquals(-25,m.intValue());
+				assertEquals(new Quadruple(5*0x100000000L,0,false), q, "q not modified");
+				assertEquals(new Quadruple(5*0x100000000L,0,true), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -373,6 +379,8 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.multiply(r);
 				assertEquals(2000,m.intValue());
+				assertEquals(new Quadruple(5*0x100000000L,1,false), q, "q not modified");
+				assertEquals(new Quadruple(4*0x100000000L,1,false), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -386,6 +394,8 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.multiply(r);
 				assertEquals(new Quadruple(20*0x100000000L,20,false),m);
+				assertEquals(new Quadruple(5*0x100000000L,10,false), q, "q not modified");
+				assertEquals(new Quadruple(4*0x100000000L,10,false), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -399,6 +409,8 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.multiply(r);
 				assertEquals(2500000000000L,m.longValue());
+				assertEquals(new Quadruple(5*0x100000000L,1,false), q, "q not modified");
+				assertEquals(new Quadruple(5*0x100000000L,10,false), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -412,6 +424,8 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.multiply(r);
 				assertEquals(25000000000L,m.longValue());
+				assertEquals(new Quadruple(5*0x100000000L,-1,false), q, "q not modified");
+				assertEquals(new Quadruple(5*0x100000000L,10,false), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -425,6 +439,8 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.multiply(r);
 				assertEquals(new Quadruple(25*0x100000000L,-2,false),m);
+				assertEquals(new Quadruple(5*0x100000000L,-1,false), q, "q not modified");
+				assertEquals(new Quadruple(5*0x100000000L,-1,false), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -432,12 +448,16 @@ class QuadrupleTest {
 			}
 		}
 
-		{ // Twice floating point case
-			Quadruple q = new Quadruple(0x4000000000000002L,0,false);
-			Quadruple r = new Quadruple(0x4000000000000002L,0,false);
+		{ // Twice floating point case with large upper values
+			Quadruple q = new Quadruple(0x4000000000000008L,0,false);
+			Quadruple r = new Quadruple(0x4000000000000008L,0,false);
 			try {
 				Quadruple m = q.multiply(r);
-				assertEquals("1000000000000001",Long.toHexString(m.longValue()),"Expected long value result.");
+				// Note: This result has a little floating point rounding error in the least significant digit.
+				// Maybe this could be improved a little by tracking LL and using this value to round the least significant binary digit up sometimes.  
+				assertEquals("1000000000000003",Long.toHexString(m.longValue()),"Expected long value result.");
+				assertEquals(new Quadruple(0x4000000000000008L,0,false), q, "q not modified");
+				assertEquals(new Quadruple(0x4000000000000008L,0,false), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -450,7 +470,9 @@ class QuadrupleTest {
 			Quadruple r = new Quadruple(5);
 			try {
 				Quadruple m = q.multiply(r);
-				assertEquals(m.getZero(),m,"Expected long value result.");
+				assertEquals(m.getZero(),m,"Expected result.");
+				assertEquals(new Quadruple(0), q, "q not modified");
+				assertEquals(new Quadruple(5), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -463,7 +485,24 @@ class QuadrupleTest {
 			Quadruple r = new Quadruple(0);
 			try {
 				Quadruple m = q.multiply(r);
-				assertEquals(m.getZero(),m,"Expected long value result.");
+				assertEquals(m.getZero(),m,"Expected result.");
+				assertEquals(new Quadruple(5), q, "q not modified");
+				assertEquals(new Quadruple(0), r, "r not modified");
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+		
+		{ // A case that caused some trouble
+			Quadruple q = new Quadruple(-3.29621897555450565065257251262664794921875);
+			Quadruple r = new Quadruple(1.18358655292489146930165588855743408203125);
+			assertEquals(new Quadruple(-3.29621897555450565065257251262664794921875), q, "q not modified");
+			assertEquals(new Quadruple(1.18358655292489146930165588855743408203125), r, "r not modified");
+			try {
+				Quadruple m = q.multiply(r);
+				assertEqualsWithinMargin(new Quadruple(-3.901360454962174),m,"Expected result.");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -599,7 +638,7 @@ class QuadrupleTest {
 				fail("Expected exception");
 			}
 			catch(Throwable t) {
-				// TODO Expected case.
+				// Expected case.
 			}
 		}
 
@@ -790,11 +829,28 @@ class QuadrupleTest {
 		}
 
 		{ // Another case (r value is greater than q value, and opposite signs.)
-			Quadruple q = new Quadruple(4.99999999828201309777796268463134765625);
+			Quadruple q = new Quadruple(4.99999999998201309777796268463134765625);
 			Quadruple r = new Quadruple(-4.9999999999999999976716935634613037109375);
 			try {
 				Quadruple m = q.add(r);
 				assertEqualsWithinMargin(m.getZero(), m, "Adding similar opposite-signed numbers.");
+				assertEquals(new Quadruple(4.99999999998201309777796268463134765625), q, "q not modified");
+				assertEquals(new Quadruple(-4.9999999999999999976716935634613037109375), r, "r not modified");
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Another case (addition should cause a carry in the maximal binary digits) that was proving troublesome
+			Quadruple q = new Quadruple(2.227901745543820726685225963592529296875);
+			Quadruple r = new Quadruple(2.2279010511616673874668776988983154296875);
+			try {
+				Quadruple m = q.add(r);
+				assertEqualsWithinMargin(new Quadruple(4.45580279670548814348876476287841796875), m, "Adding similar opposite-signed numbers.");
+				assertEquals(new Quadruple(2.227901745543820726685225963592529296875), q, "q not modified");
+				assertEquals(new Quadruple(2.2279010511616673874668776988983154296875), r, "r not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -810,6 +866,7 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.sqrt();
 				assertEquals("5",m.toString());
+				assertEquals(new Quadruple(25), q, "q not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -822,6 +879,7 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.sqrt();
 				assertEquals("5*10^-1",m.toString());
+				assertEquals(new Quadruple(0.25), q, "q not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -834,6 +892,7 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.sqrt();
 				fail("Failure expected");
+				assertEquals(new Quadruple(-5), q, "q not modified");
 			}
 			catch(Throwable t) {
 				// Expected result.
@@ -845,6 +904,7 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.sqrt();
 				assertEquals("1*10^4",m.toString());
+				assertEquals(new Quadruple(100000000), q, "q not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -857,6 +917,7 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.sqrt();
 				assertTrue(m.toString().matches("^1.024612(?:(?:49[0-9]*)|(?:5(?:0[0-9]*)?))\\*10\\^4$"));
+				assertEquals(new Quadruple(10246.125*10246.125), q, "q not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -869,6 +930,7 @@ class QuadrupleTest {
 			try {
 				Quadruple m = q.sqrt();
 				assertEqualsWithinMargin(new Quadruple(1.4953487812), m, "Square root of 2.236067977499789 found.");
+				assertEquals(new Quadruple(2.236067977499789), q, "q not modified");
 			}
 			catch(Throwable t) {
 				t.printStackTrace();

@@ -319,7 +319,9 @@ public class Quadruple extends ArithmeticNumber<Quadruple> {
 		long newValueL = (newValueUL&0xFFFFFFFFL) + (newValueLU&0xFFFFFFFFL) + (newValueLL>>>32);
 		newValueH+=newValueL>>>32;
 		newValueHH+=newValueH>>>32;
-		// newValueLL &= 0xFFFFFFL; Unneeded because the lowest place won't carry and these lower order digits are disposable
+		newValueH&=0xFFFFFFFFL;
+		newValueL&=0xFFFFFFFFL;
+		// newValueLL &= 0xFFFFFFFFL; Unneeded because the lowest place won't carry and these lower order digits are disposable
 		while(newValueHH>0) {
 			long t = newValueHH % 10;
 			newValueHH/=10;
@@ -330,8 +332,8 @@ public class Quadruple extends ArithmeticNumber<Quadruple> {
 			newValueL/=10;
 			orderOfMagnitude++;
 		}
-		long newValue = (newValueH<<32) + newValueL;
 		boolean negative = q.negative ^ this.negative;
+		long newValue = (newValueH<<32) + newValueL;
 		return new Quadruple(newValue,orderOfMagnitude,negative);
 	}
 	
@@ -446,13 +448,14 @@ public class Quadruple extends ArithmeticNumber<Quadruple> {
 		long lowerPartA = (value&0xFFFFFFFFL);
 		long upperPartB = (qValue>>>32);
 		long lowerPartB = (qValue&0xFFFFFFFFL);
-		boolean negative = this.negative;
+		boolean retNegative = this.negative;
+		long retOrderOfMagnitude = this.orderOfMagnitude;
 		long newValueH;
 		long newValueL;
 		if(this.negative^q.negative) {
 			if((upperPartB>upperPartA)
 				||((upperPartB==upperPartA)&&(lowerPartB>lowerPartA))) {
-				negative = !negative;
+				retNegative = !retNegative;
 				long t = upperPartA;
 				upperPartA = upperPartB;
 				upperPartB = t;
@@ -480,11 +483,11 @@ public class Quadruple extends ArithmeticNumber<Quadruple> {
 				newValueH/=10;
 				newValueL+=t<<32;
 				newValueL/=10;
-				orderOfMagnitude++;
+				retOrderOfMagnitude++;
 			}
 		}
 		long newValue = (newValueH<<32) + newValueL;
-		return new Quadruple(newValue,orderOfMagnitude,negative);
+		return new Quadruple(newValue,retOrderOfMagnitude,retNegative);
 	}
 	
 	/**
@@ -506,6 +509,11 @@ public class Quadruple extends ArithmeticNumber<Quadruple> {
 		return negative;
 	}
 	
+	@Override
+	public long getBinaryPrecision() {
+		return 64;
+	}
+
 	/**
 	 * 
 	 * @return true if this quadruple is a whole number and false otherwise.

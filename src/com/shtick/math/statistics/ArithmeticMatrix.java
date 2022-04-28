@@ -209,12 +209,7 @@ public class ArithmeticMatrix<A extends ArithmeticObject<A>> {
     		return matrix[0][0].multiply(matrix[1][1].multiply(matrix[2][2]).subtract(matrix[2][1].multiply(matrix[1][2])))
     				.subtract(matrix[1][0].multiply(matrix[0][1].multiply(matrix[2][2]).subtract(matrix[2][1].multiply(matrix[0][2]))))
     				.add(matrix[2][0].multiply(matrix[0][1].multiply(matrix[1][2]).subtract(matrix[1][1].multiply(matrix[0][2]))));
-    	// TODO If !divisionreliable
     	return getDeterminantByClow();
-//    	int[] intList = new int[matrix.length];
-//    	for(int i=0;i<intList.length;i++)
-//    		intList[i]=i+1;
-//    	return getSubdeterminant(0,0,intList);
     }
     
     private A getDeterminantByClow() {

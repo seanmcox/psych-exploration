@@ -112,8 +112,18 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
 	
 	private A getNewtonsMethodCloseEnoughA() {
 		try {
-			if(newtonsMethodCloseEnough==null)
-				newtonsMethodCloseEnough = (A)sample.getClass().getDeclaredConstructor(double.class).newInstance(0.0000001);
+			if(newtonsMethodCloseEnough==null) {
+				long binaryPrecision = sample.getBinaryPrecision();
+				if(binaryPrecision<=1) {
+					newtonsMethodCloseEnough = (A)sample.getClass().getDeclaredConstructor(double.class).newInstance(0.0000001);
+				}
+				else {
+					if(binaryPrecision>(long)Integer.MAX_VALUE)
+						binaryPrecision = Integer.MAX_VALUE; // TODO Figure out how to work with even larger precision
+					newtonsMethodCloseEnough = (A)sample.getClass().getDeclaredConstructor(double.class).newInstance(0.5);
+					newtonsMethodCloseEnough = newtonsMethodCloseEnough.pow((A)sample.getClass().getDeclaredConstructor(int.class).newInstance((int)binaryPrecision)).multiply(get2A());
+				}
+			}
 			return newtonsMethodCloseEnough;
 		}
 		catch(InvocationTargetException|IllegalAccessException|InstantiationException|NoSuchMethodException t) {
@@ -384,6 +394,8 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
 		A currentPos=startPos;
 		A last=getValue(currentPos);
 		A current=last;
+	    if(current.isZero())
+	    	return currentPos;
 		A lastD=dp.getValue(currentPos);
 		A currentD=lastD;
 		A shift;
@@ -397,15 +409,14 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
 		    else{
 		    	shift=current.divide(lastD).getNegative();
 		    }
-//		    if(current.getAbs().compareTo(.001)<0) {
-//		    	shift=(shift.isZero()?shift:(shift.isNegative()?shift.getIdentity().getNegative():shift.getIdentity())).multiply(.001);
-//		    }
 		    if(shift.isZero())
 		    	shift=currentPos.subtract(lastPos);
 		    currentPos=currentPos.add(shift);
 		    current=getValue(currentPos);
+		    if(current.isZero())
+		    	return currentPos;
 		    currentD=dp.getValue(currentPos);
-		    if((lastD.multiply(currentD).compareTo(sample.getZero())<0)&&(!(last.multiply(current).compareTo(sample.getZero())<0))){
+		    if((!lastD.isZero())&&(!currentD.isZero())&&(lastD.isNegative()!=currentD.isNegative())&&(last.isNegative()==current.isNegative())){
 		    	// We have stumbled upon either two zeros, or an indication of an imaginary root.
 		    	/*
 		    	 * Shape is as follows:
@@ -424,27 +435,19 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
 				A minMaxPos=dp.newtonsMethod(lastPos.add(currentPos).divide(get2A()));
 				A minMax=getValue(minMaxPos);
 				A product = minMax.multiply(current);
-				if(product.compareTo(sample.getZero())<0){
-				    lastPos=currentPos;
-				    currentPos=minMaxPos;
-				    last=current;
-				    current=minMax;
-				    lastD=currentD;
-				    currentD=dp.getValue(currentPos);
-				}
-				else if(product.compareTo(sample.getZero())>0){
+				if(!(product.isNegative()||product.isZero())){
 				    System.out.println("p(x): "+toString());
 				    System.out.println("dp/dx: "+dp.toString());
 				    System.out.println("xn = "+minMaxPos);
 				    System.out.println("p(xn) = "+minMax);
 				    throw new Throwable("Imaginary root found at minimum.");
 				}
-			    return minMaxPos;
+		    	return minMaxPos;
 		    }
-		    if(last.multiply(current).compareTo(sample.getZero())<0){// We have stumbled upon a zero.
+		    if(last.isNegative()!=current.isNegative()){// We have stumbled upon a zero.
 				A highPos;
 				A lowPos;
-				if(current.compareTo(last)>0){
+				if(last.isNegative()){
 				    highPos=currentPos;
 				    lowPos=lastPos;
 				}
@@ -454,22 +457,25 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
 				}
 				A tempPos = highPos.add(lowPos).divide(get2A());
 				A tempVal;
+				A closeEnough = getNewtonsMethodCloseEnoughA();
+				A closeEnoughN = closeEnough.getNegative();
 				while((tempPos.compareTo(max(highPos,lowPos))<0)&&(tempPos.compareTo(min(highPos,lowPos))>0)){
 				    tempVal = getValue(tempPos);
-				    if(tempVal.compareTo(getNewtonsMethodCloseEnoughA())>0)
+				    if(tempVal.compareTo(closeEnough)>0)
 						highPos=tempPos;
-				    else if(tempVal.compareTo(getNewtonsMethodCloseEnoughA())<0)
+				    else if(tempVal.compareTo(closeEnoughN)<0)
 						lowPos=tempPos;
-				    else {
+				    else
 				    	return tempPos;
-				    }
 				    tempPos = highPos.add(lowPos).divide(get2A());
+				    if(highPos.subtract(lowPos).getAbs().compareTo(closeEnough)<=0)
+				    	return tempPos;
 				}
 				return tempPos;
 		    }
 		}
 		return currentPos;
-    }
+    }    
     
     private A max(A a, A b) {
     	return (a.compareTo(b)>0)?a:b;

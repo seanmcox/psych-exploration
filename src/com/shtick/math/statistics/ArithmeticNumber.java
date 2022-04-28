@@ -27,6 +27,12 @@ public abstract class ArithmeticNumber<O extends ArithmeticNumber<O>> extends Nu
 	 * @return true if negative, and false otherwise.
 	 */
 	public abstract boolean isNegative();
+	
+	/**
+	 * 
+	 * @return The number of binary digits of precision provided by the data type or -1 if this measure is not helpful. (eg. Functionally infinite, impossibly ambiguous, or whatever.)
+	 */
+	public abstract long getBinaryPrecision();
 
 	/**
 	 * 
