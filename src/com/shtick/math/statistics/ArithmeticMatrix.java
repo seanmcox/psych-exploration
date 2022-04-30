@@ -209,9 +209,20 @@ public class ArithmeticMatrix<A extends ArithmeticObject<A>> {
     		return matrix[0][0].multiply(matrix[1][1].multiply(matrix[2][2]).subtract(matrix[2][1].multiply(matrix[1][2])))
     				.subtract(matrix[1][0].multiply(matrix[0][1].multiply(matrix[2][2]).subtract(matrix[2][1].multiply(matrix[0][2]))))
     				.add(matrix[2][0].multiply(matrix[0][1].multiply(matrix[1][2]).subtract(matrix[1][1].multiply(matrix[0][2]))));
+    	// TODO Determine whether A is resilient to division, and prefer getDeterminantByReduction() if it is.
     	return getDeterminantByClow();
     }
     
+    /**
+     * The algorithm below is based on https://page.mi.fu-berlin.de/rote/Papers/pdf/Division-free+algorithms.pdf
+     * 
+     * Runs in O(n^4) and requires O(n^2) memory.
+     * 
+     * It is slower than getDeterminantByReduction(), but it requires no divisions, so it makes a more precise calculation
+     * in situations where A is not easily divisible (eg. polynomials).
+     * 
+     * @return
+     */
     private A getDeterminantByClow() {
     	// These arrays represent [clow_head][current_vertex]
     	A[][] sumsCurrent = (A[][])new ArithmeticObject<?>[matrix.length][matrix.length];

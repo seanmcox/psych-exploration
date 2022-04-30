@@ -123,7 +123,9 @@ public class DoubleMatrix {
      * 
      * Runs in O(n^4) and requires O(n^2) memory.
      * 
-     * It is slower than getDeterminantByReduction(), but it requires no divisions, so it makes a more precise calculation.
+     * It is slower than getDeterminantByReduction(), but it requires no divisions, so it makes a more precise calculation when
+     * the data type is not reliably resilient to division. The function is defined here mostly to be able to sanity check the
+     * basic idea and implementation.
      * 
      * @return
      */

@@ -74,7 +74,6 @@ public class PrincipleComponentAnalysis {
 		File f = new File("./covariance.txt");
 		System.out.println(f.getAbsolutePath());
 		m.print(new PrintStream(new FileOutputStream(f)));
-		System.exit(0);
 	
 		Eigensystem system;
 		if(statusTracker!=null)
