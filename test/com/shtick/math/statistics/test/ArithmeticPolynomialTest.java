@@ -153,7 +153,7 @@ class ArithmeticPolynomialTest {
 				assertEqualsWithinMargin(new Quadruple(0.7373527057603276),zeros.get(0).getAbs(),""+(0.7373527057603276)+"=|"+zeros.get(0)+"|");
 				assertEqualsWithinMargin(new Quadruple(0.7373527057603276),zeros.get(1).getAbs(),""+(0.7373527057603276)+"=|"+zeros.get(1)+"|");
 				assertTrue((zeros.get(0).compareTo(ZERO)<0)^(zeros.get(1).compareTo(ZERO)<0),"Zeros on opposite sides of origin.");
-				assertEqualsWithinMargin(ONE.getIdentity(),p.getValue(ZERO),""+(-1)+"="+p.getValue(ZERO));
+				assertEqualsWithinMargin(ONE.getNegative(),p.getValue(ZERO),""+(-1)+"="+p.getValue(ZERO));
 				assertEqualsWithinMargin(TWO,p.getValue(ONE),""+(2)+"="+p.getValue(ONE));
 			}
 			catch(Throwable t) {
@@ -185,8 +185,8 @@ class ArithmeticPolynomialTest {
 			try {
 				List<Quadruple> zeros = p.findZeros();
 				assertEquals(2, zeros.size(),"Two points are zeros.");
-				assertEqualsWithinMargin(new Quadruple(1.4142135623730951), zeros.get(0), ""+(1.4142135623730951)+"=|"+zeros.get(0)+"|");
-				assertEqualsWithinMargin(new Quadruple(1.4142135623730951), zeros.get(1), ""+(1.4142135623730951)+"=|"+zeros.get(1)+"|");
+				assertEqualsWithinMargin(new Quadruple(1.41421356237309504859), zeros.get(0), ""+(1.41421356237309504859)+"=|"+zeros.get(0)+"|");
+				assertEqualsWithinMargin(new Quadruple(1.41421356237309504859).getNegative(), zeros.get(1), ""+(-1.41421356237309504859)+"=|"+zeros.get(1)+"|");
 				assertTrue((zeros.get(0).compareTo(ZERO)<0)^(zeros.get(1).compareTo(ZERO)<0),"Zeros on opposite sides of origin.");
 			}
 			catch(Throwable t) {
@@ -351,7 +351,7 @@ class ArithmeticPolynomialTest {
 			try {
 				p=p.derivative();
 				List<Quadruple> zeros = p.findZeros();
-				assertEquals(ZERO, zeros.size(),"No points are zeros.");
+				assertEquals(0, zeros.size(),"No points are zeros.");
 				assertEqualsWithinMargin(ONE,p.getValue(ZERO),""+(1)+"="+p.getValue(ZERO));
 				assertEqualsWithinMargin(ONE,p.getValue(ONE),""+(1)+"="+p.getValue(ONE));
 			}
@@ -414,7 +414,7 @@ class ArithmeticPolynomialTest {
 			try {
 				p=p.derivative();
 				List<Quadruple> zeros = p.findZeros();
-				assertEquals(ZERO, zeros.size(),"No point is zero.");
+				assertEquals(0, zeros.size(),"No point is zero.");
 				assertEqualsWithinMargin(ONE,p.getValue(ZERO),""+(1)+"="+p.getValue(ZERO));
 				assertEqualsWithinMargin(SIX,p.getValue(ONE),""+(6)+"="+p.getValue(ONE));
 			}

@@ -10,6 +10,7 @@
 package com.shtick.math.statistics;
 
 import java.io.PrintStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -46,9 +47,11 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
      * @param size the number of coefficients to copy.
      * @param sample 
      */
+	@SuppressWarnings("unchecked")
     public ArithmeticPolynomial(A[] coefficients, int start, int size, A sample) {
-		this.coefficients = (A[])new Object[size];
+		this.coefficients = (A[]) Array.newInstance(coefficients.getClass().getComponentType(), size);
 		System.arraycopy(coefficients,start,this.coefficients,0,size);
+//		this.coefficients = (A[]) Arrays.copyOf(coefficients,coefficients.length,coefficients.getClass());
 		this.sample = sample;
     }
     
@@ -274,7 +277,7 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
 		    LinkedList<A> retVal = new LinkedList<A>();
 		    retVal.add(coefficients[0].getZero().subtract(coefficients[0].divide(coefficients[1])));
 		}
-		if(coefficients[0].getZero().equals(coefficients[0])){ // Simplifying case: 0-constant
+		if(coefficients[0].isZero()){ // Simplifying case: 0-constant
 		    ArithmeticPolynomial<A> p= new ArithmeticPolynomial<A>(coefficients,1,coefficients.length-1,sample);
 		    List<A> retval = p.findZeros();
 		    retval.add(coefficients[0]);
@@ -438,11 +441,23 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
 				if(!(product.isNegative()||product.isZero())){
 				    System.out.println("p(x): "+toString());
 				    System.out.println("dp/dx: "+dp.toString());
-				    System.out.println("xn = "+minMaxPos);
+				    System.out.println("x_n-2 = "+lastPos);
+				    System.out.println("x_n-1 = "+currentPos);
+				    System.out.println("x_n = "+minMaxPos);
 				    System.out.println("p(xn) = "+minMax);
 				    throw new Throwable("Imaginary root found at minimum.");
 				}
-		    	return minMaxPos;
+				A highPos;
+				A lowPos;
+				if(minMax.isNegative()){
+				    highPos=currentPos;
+				    lowPos=minMaxPos;
+				}
+				else{
+				    highPos=minMaxPos;
+				    lowPos=currentPos;
+				}
+				return newtonsBackupMethod(highPos,lowPos);
 		    }
 		    if(last.isNegative()!=current.isNegative()){// We have stumbled upon a zero.
 				A highPos;
@@ -455,27 +470,38 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
 				    highPos=lastPos;
 				    lowPos=currentPos;
 				}
-				A tempPos = highPos.add(lowPos).divide(get2A());
-				A tempVal;
-				A closeEnough = getNewtonsMethodCloseEnoughA();
-				A closeEnoughN = closeEnough.getNegative();
-				while((tempPos.compareTo(max(highPos,lowPos))<0)&&(tempPos.compareTo(min(highPos,lowPos))>0)){
-				    tempVal = getValue(tempPos);
-				    if(tempVal.compareTo(closeEnough)>0)
-						highPos=tempPos;
-				    else if(tempVal.compareTo(closeEnoughN)<0)
-						lowPos=tempPos;
-				    else
-				    	return tempPos;
-				    tempPos = highPos.add(lowPos).divide(get2A());
-				    if(highPos.subtract(lowPos).getAbs().compareTo(closeEnough)<=0)
-				    	return tempPos;
-				}
-				return tempPos;
+				return newtonsBackupMethod(highPos,lowPos);
 		    }
 		}
 		return currentPos;
-    }    
+    }
+    
+    /**
+     * AKA binary search.
+     * 
+     * @param highPos A value for which f(highPos)>0
+     * @param lowPos A value for which f(lowPos)<0
+     * @return The value, retval, for which f(retval) almost precisely 0.
+     */
+    private A newtonsBackupMethod(A highPos, A lowPos) {
+		A tempPos = highPos.add(lowPos).divide(get2A());
+		A tempVal;
+		A closeEnough = getNewtonsMethodCloseEnoughA();
+		A closeEnoughN = closeEnough.getNegative();
+		while((tempPos.compareTo(max(highPos,lowPos))<0)&&(tempPos.compareTo(min(highPos,lowPos))>0)){
+		    tempVal = getValue(tempPos);
+		    if(tempVal.compareTo(closeEnough)>0)
+				highPos=tempPos;
+		    else if(tempVal.compareTo(closeEnoughN)<0)
+				lowPos=tempPos;
+		    else
+		    	return tempPos;
+		    tempPos = highPos.add(lowPos).divide(get2A());
+		    if(highPos.subtract(lowPos).getAbs().compareTo(closeEnough)<=0)
+		    	return tempPos;
+		}
+		return tempPos;
+    }
     
     private A max(A a, A b) {
     	return (a.compareTo(b)>0)?a:b;
@@ -506,7 +532,7 @@ public class ArithmeticPolynomial<A extends ArithmeticNumber<A>> implements Arit
 		while((i>0)&&(coefficients[i-1].equals(coefficients[i-1].getZero())))
 		    i--;
 		if(i!=coefficients.length){
-		    A[] c = (A[])new Object[i];
+		    A[] c = (A[]) Array.newInstance(coefficients.getClass().getComponentType(), i);
 		    System.arraycopy(coefficients,0,c,0,i);
 		    coefficients = c;
 		}
