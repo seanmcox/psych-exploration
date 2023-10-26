@@ -4,7 +4,6 @@
 package com.shtick.math.statistics;
 
 import java.security.InvalidParameterException;
-import java.util.LinkedList;
 
 /**
  * A numeric class designed around scientific notation and the need to keep track of significant digits.
@@ -22,9 +21,9 @@ import java.util.LinkedList;
  *
  */
 public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
-	private static final SignificantDecimal ZERO = new SignificantDecimal(0,0);
-	private static final SignificantDecimal ONE = new SignificantDecimal(1,0);
-	private static final SignificantDecimal TWO = new SignificantDecimal(2,0);
+	private static final SignificantDecimal ZERO = new SignificantDecimal(0,true);
+	private static final SignificantDecimal ONE = new SignificantDecimal(1,true);
+	private static final SignificantDecimal TWO = new SignificantDecimal(2,true);
 //	private static final ScientificDecimal POW_ERROR_THRESHOLD = new ScientificDecimal(10);
 
 	/**
@@ -42,6 +41,11 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	 */
 	private long orderOfMagnitude;
 	private boolean negative;
+	/**
+	 * If true, then the number is treated as an exact number with no margin of error.
+	 * (Not suitable for data, but useful for numbers used for purely mechanical purposes like doubling, squaring, etc.)
+	 */
+	private boolean exact;
 
 	/**
 	 * 
@@ -51,6 +55,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	public SignificantDecimal(double d, int significantDigits) {
 		if(!Double.isFinite(d))
 			throw new IllegalArgumentException("Non-finite double cannot be used to instantiate a ScientificDecimal.");
+		this.exact=false;
 		this.negative = d<0;
 		long rawLongBits = Double.doubleToRawLongBits(d);
 		int binaryExponent = (int)((rawLongBits&0x7FF0000000000000L)>>>52);
@@ -106,35 +111,32 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 				decimalExponent--;
 			}
 		}
-		// Adjust to ideal whole/fractional parts
-		while((mantissa&0xFFFFFFFF00000000L)!=0) {
-			mantissaLow+=(mantissa%10)<<32;
-			mantissa>>>=1;
-			mantissa/=5;
-			mantissaLow/=10;
-			decimalExponent++;
-		}
-		long value=mantissaLow+(mantissa<<32);
 		this.significantDigits = new int[significantDigits];
-		int[] digits = getDigits(value,0);
+		int[] digits = getDigits(mantissa,0);
 		for(int i=0;i<Math.min(significantDigits, digits.length);i++)
 			this.significantDigits[i] = digits[i];
+		if((significantDigits<digits.length)&&(digits[significantDigits]>=5))
+			this.significantDigits[significantDigits-1]++;
 		this.orderOfMagnitude = decimalExponent+digits.length-1;
 	}
 
 	/**
 	 * 
-	 * @param value A simple signed integer.
+	 * @param value A simple signed long integer.
 	 * @param significantDigits The number of significant digits in the provided number.
 	 *                          If more than the number of decimal digits in the value, then the number will be zero extended.
-	 *                          If less than the number of decimal digits in the value, then the number will be truncated.
+	 *                          If less than the number of decimal digits in the value, then the number will be rounded.
 	 *                          If value is 0, then significantDigits will be used to determine an orderOfMagnitude for the zero.
 	 *                          (this.orderOfMagnitude=-significantDigits)
 	 */
-	public SignificantDecimal(int value, int significantDigits) {
+	public SignificantDecimal(long value, int significantDigits) {
+		boolean wasMinValue=value==Long.MIN_VALUE;
 		if(value<0) {
 			this.negative = true;
-			value = -value;
+			if(wasMinValue)
+				value = Long.MAX_VALUE;
+			else
+				value = -value;
 		}
 		else {
 			this.negative = false;
@@ -148,7 +150,45 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		int[] digits = getDigits(value,0);
 		for(int i=0;i<Math.min(significantDigits, digits.length);i++)
 			this.significantDigits[i] = digits[i];
+		if(significantDigits<digits.length) {
+			if(digits[significantDigits]>=5)
+				this.significantDigits[significantDigits-1]++;
+		}
+		else if(wasMinValue) {
+			this.significantDigits[digits.length-1]++;
+		}
 		this.orderOfMagnitude = digits.length-1;
+	}
+
+	/**
+	 * 
+	 * @param value A simple signed long integer.
+	 * @param exact If true, then the number is treated as an exact number with no margin of error.
+	 *              If false, then the significant digits is the number of digits in the number.
+	 *              (exact is not suitable for data, but useful for numbers used for purely mechanical purposes like doubling, squaring, etc.)
+	 */
+	public SignificantDecimal(long value, boolean exact) {
+		boolean wasMinValue=value==Long.MIN_VALUE;
+		this.exact = exact;
+		if(value<0) {
+			this.negative = true;
+			if(wasMinValue)
+				value = Long.MAX_VALUE;
+			else
+				value = -value;
+		}
+		else {
+			this.negative = false;
+			if(value==0) {
+				this.significantDigits = new int[0];
+				this.orderOfMagnitude=0;
+				return;
+			}
+		}
+		this.significantDigits = getDigits(value,0);
+		if(wasMinValue)
+			this.significantDigits[this.significantDigits.length-1]++;
+		this.orderOfMagnitude = this.significantDigits.length-1;
 	}
 	
 	/**
@@ -176,7 +216,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	
 	/**
 	 * 
-	 * @param value A positive integer
+	 * @param value A positive (ie. absolute value) integer
 	 * @param nextOrderOfMagnitude
 	 * @return
 	 */
@@ -184,7 +224,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		if(value==0)
 			return new int[nextOrderOfMagnitude];
 		int placeValue = (int)(value%10);
-		long continuingValue = value/10;
+		long continuingValue = (value>>>1)/5;
 		int[] retval = getDigits(continuingValue, nextOrderOfMagnitude+1);
 		retval[retval.length-1-nextOrderOfMagnitude] = placeValue;
 		return retval;
@@ -199,7 +239,14 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		if(!o.negative && this.negative)
 			return -1;
 		int negativeMultiplier = negative?-1:1;
-		return negativeMultiplier*absCompareTo(this, o);
+		int compare = negativeMultiplier*absCompareTo(this, o);
+		if(compare!=0)
+			return compare;
+		if(o.exact && !this.exact)
+			return 1;
+		if(!o.exact && this.exact)
+			return -1;
+		return 0;
 	}
 	
 	private static int absCompareTo(SignificantDecimal a, SignificantDecimal b) {
@@ -637,6 +684,10 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	public boolean isNegative() {
 		return negative;
 	}
+
+	public boolean isExact() {
+		return exact;
+	}
 	
 	@Override
 	public long getBinaryPrecision() {
@@ -705,6 +756,8 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			if(i==0)
 				retval+=".";
 		}
+		if(exact)
+			retval="["+retval+"]";
 		retval+="x10^"+orderOfMagnitude;
 		return retval;
 	}
