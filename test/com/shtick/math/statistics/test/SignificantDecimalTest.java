@@ -235,16 +235,12 @@ class SignificantDecimalTest {
 		}
 	}
 	
-	/*
 	@Test
 	void testComparison() {
-		{ // Simple case
-			Quadruple q = new Quadruple(5*0x100000000L,0,false);
-			Quadruple r = new Quadruple(4*0x100000000L,0,false);
+		{ // Self compare case
+			SignificantDecimal sd = new SignificantDecimal(Math.PI, 5);
 			try {
-				assertTrue(q.compareTo(r)>0);
-				assertTrue(r.compareTo(q)<0);
-				assertTrue(q.compareTo(q)==0);
+				assertTrue(sd.compareTo(sd)==0);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -252,13 +248,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Negative case
-			Quadruple q = new Quadruple(5*0x100000000L,0,true);
-			Quadruple r = new Quadruple(4*0x100000000L,0,true);
+		{ // Opposite sign cases
+			SignificantDecimal sdp = new SignificantDecimal(Math.PI, 5);
+			SignificantDecimal sdn = new SignificantDecimal(-Math.PI, 5);
 			try {
-				assertTrue(q.compareTo(r)<0);
-				assertTrue(r.compareTo(q)>0);
-				assertTrue(q.compareTo(q)==0);
+				assertTrue(sdp.compareTo(sdn)>0);
+				assertTrue(sdn.compareTo(sdp)<0);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -266,13 +261,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Cross-sign case
-			Quadruple q = new Quadruple(5*0x100000000L,0,false);
-			Quadruple r = new Quadruple(5*0x100000000L,0,true);
+		{ // Positive with different values case
+			SignificantDecimal sdg = new SignificantDecimal(Math.PI, 5);
+			SignificantDecimal sdl = new SignificantDecimal(Math.PI-1, 5);
 			try {
-				assertTrue(q.compareTo(r)>0);
-				assertTrue(r.compareTo(q)<0);
-				assertTrue(q.compareTo(q)==0);
+				assertTrue(sdg.compareTo(sdl)>0);
+				assertTrue(sdl.compareTo(sdg)<0);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -280,13 +274,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Scaled case
-			Quadruple q = new Quadruple(5*0x100000000L,1,false);
-			Quadruple r = new Quadruple(4*0x100000000L,1,false);
+		{ // Negative with different values case
+			SignificantDecimal sdg = new SignificantDecimal(Math.PI, 5).getNegative();
+			SignificantDecimal sdl = new SignificantDecimal(Math.PI-1, 5).getNegative();
 			try {
-				assertTrue(q.compareTo(r)>0);
-				assertTrue(r.compareTo(q)<0);
-				assertTrue(q.compareTo(q)==0);
+				assertTrue(sdg.compareTo(sdl)<0);
+				assertTrue(sdl.compareTo(sdg)>0);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -294,13 +287,11 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Large case
-			Quadruple q = new Quadruple(5*0x100000000L,10,false);
-			Quadruple r = new Quadruple(4*0x100000000L,10,false);
+		{ // Same value in different objects
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 5);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.PI, 5);
 			try {
-				assertTrue(q.compareTo(r)>0);
-				assertTrue(r.compareTo(q)<0);
-				assertTrue(q.compareTo(q)==0);
+				assertTrue(sd1.compareTo(sd2)==0);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -308,13 +299,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Cross-scale case
-			Quadruple q = new Quadruple(5*0x100000000L,1,false);
-			Quadruple r = new Quadruple(5*0x100000000L,10,false);
+		{ // Exact mismatch case
+			SignificantDecimal sde = new SignificantDecimal(3, true);
+			SignificantDecimal sdi = new SignificantDecimal(3, false);
 			try {
-				assertTrue(q.compareTo(r)<0);
-				assertTrue(r.compareTo(q)>0);
-				assertTrue(q.compareTo(q)==0);
+				assertTrue(sdi.compareTo(sde)>0);
+				assertTrue(sde.compareTo(sdi)<0);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -323,6 +313,7 @@ class SignificantDecimalTest {
 		}
 	}
 
+	/*
 	@Test
 	void testMultiply() {
 		{ // Simple case

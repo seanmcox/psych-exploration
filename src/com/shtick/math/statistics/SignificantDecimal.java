@@ -198,7 +198,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	 *                         For 0-valued ScientificDecimals, the orderOfMagnitude identifies the lowest known 0 place value. (By which is meant, the place value that is taken to be 0 +/- 1.)
 	 * @param negative
 	 */
-	public SignificantDecimal(int[] significantDigits, long orderOfMagnitude, boolean negative) {
+	public SignificantDecimal(int[] significantDigits, long orderOfMagnitude, boolean negative, boolean exact) {
 		super();
 		boolean isZero = significantDigits.length==0;
 		for(int i=0;i<significantDigits.length;i++) {
@@ -212,6 +212,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		this.significantDigits = significantDigits;
 		this.orderOfMagnitude = orderOfMagnitude;
 		this.negative = negative;
+		this.exact=exact;
 	}
 	
 	/**
@@ -402,9 +403,9 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		boolean negative = this.negative^q.negative;
 		long orderOfMagnitude = this.orderOfMagnitude+q.orderOfMagnitude;
 		if(isZero()&&q.isZero())
-			return new SignificantDecimal(new int[0],orderOfMagnitude, negative);
+			return new SignificantDecimal(new int[0],orderOfMagnitude, negative, exact&&q.exact);
 		if(isZero()||q.isZero())
-			return new SignificantDecimal(new int[0],orderOfMagnitude+1, negative);
+			return new SignificantDecimal(new int[0],orderOfMagnitude+1, negative, exact&&q.exact);
 		int[] digits = new int[this.significantDigits.length+q.significantDigits.length];
 		for(int i=0;i<this.significantDigits.length;i++)
 			for(int j=0;j<q.significantDigits.length;j++)
@@ -424,7 +425,8 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			significantDigits[0] = carry;
 			orderOfMagnitude++;
 		}
-		return new SignificantDecimal(significantDigits,orderOfMagnitude,negative);
+		// TODO Handle double-exact multiplication.
+		return new SignificantDecimal(significantDigits,orderOfMagnitude,negative, false);
 	}
 	
 	/**
@@ -438,7 +440,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		boolean negative = this.negative^q.negative;
 		long orderOfMagnitude = this.orderOfMagnitude - q.orderOfMagnitude;
 		if(this.isZero())
-			return new SignificantDecimal(new int[0], orderOfMagnitude, negative);
+			return this;
 		int[] resultDigits = new int[Math.min(this.significantDigits.length,q.significantDigits.length)];
 		int[] workingDigits = new int[Math.max(this.significantDigits.length,q.significantDigits.length)+1];
 		int[][] denominatorMultiples = new int[9][q.significantDigits.length];
@@ -491,7 +493,8 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 				i--;
 			}
 		}
-		return new SignificantDecimal(resultDigits,orderOfMagnitude,negative);
+		// TODO Handle double-exact division
+		return new SignificantDecimal(resultDigits,orderOfMagnitude,negative, false);
 	}
 
 	/**
@@ -553,12 +556,13 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		long lowB = b.orderOfMagnitude-b.significantDigits.length+1;
 		long orderOfMagnitude = Math.max(highA, highB);
 
+		// TODO Handle double-exact addition
 		// If b is insignificant.
 		if(highB<(lowA-1))
-			return new SignificantDecimal(a.significantDigits, a.orderOfMagnitude, negative);
+			return new SignificantDecimal(a.significantDigits, a.orderOfMagnitude, negative, false);
 		// If a is insignificant.
 		if(highA<(lowB-1))
-			return new SignificantDecimal(b.significantDigits, b.orderOfMagnitude, negative);
+			return new SignificantDecimal(b.significantDigits, b.orderOfMagnitude, negative, false);
 
 		// Add decimal places
 		int[] returnDigits = new int[(int)(orderOfMagnitude-Math.max(lowA, lowB)+1)];
@@ -584,7 +588,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 				newReturnDigits[i+1] = returnDigits[i];
 		}
 		
-		return new SignificantDecimal(returnDigits, orderOfMagnitude, negative);
+		return new SignificantDecimal(returnDigits, orderOfMagnitude, negative, false);
 	}
 	
 	/**
@@ -620,9 +624,10 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		long lowB = b.orderOfMagnitude-b.significantDigits.length+1;
 		long orderOfMagnitude = highA;
 		
+		// TODO Handle double-exact subtraction
 		// If b is insignificant.
 		if(highB<(lowA-1))
-			return new SignificantDecimal(a.significantDigits, a.orderOfMagnitude, negative);
+			return new SignificantDecimal(a.significantDigits, a.orderOfMagnitude, negative, false);
 
 		// Add decimal places
 		int[] workingDigits = new int[(int)(orderOfMagnitude-Math.min(lowA, lowB)+1)];
@@ -667,12 +672,12 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		for(int i=0;i<returnDigits.length;i++)
 			returnDigits[i] = workingDigits[i+exWorkingDigitCount];
 		
-		return new SignificantDecimal(returnDigits, orderOfMagnitude, negative);
+		return new SignificantDecimal(returnDigits, orderOfMagnitude, negative, false);
 	}
 	
 	@Override
 	public SignificantDecimal getNegative() {
-		return new SignificantDecimal(significantDigits, orderOfMagnitude, !negative);
+		return new SignificantDecimal(significantDigits, orderOfMagnitude, !negative, exact);
 	}
 
 	@Override
