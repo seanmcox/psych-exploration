@@ -312,185 +312,27 @@ class SignificantDecimalTest {
 			}
 		}
 	}
-
-	/*
+	
 	@Test
-	void testMultiply() {
-		{ // Simple case
-			Quadruple q = new Quadruple(5*0x100000000L,0,false);
-			Quadruple r = new Quadruple(4*0x100000000L,0,false);
+	void testNegative() {
+		{ // Simple extreme case
+			SignificantDecimal sd = new SignificantDecimal(Long.MAX_VALUE,true).getNegative();
 			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(20,m.intValue());
-				assertEquals(new Quadruple(5*0x100000000L,0,false), q, "q not modified");
-				assertEquals(new Quadruple(4*0x100000000L,0,false), r, "r not modified");
+				assertTrue(sd.isNegative());
+				assertTrue(sd.isExact());
+				assertEquals("[-9.223372036854775807]x10^18",sd.toString());
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
 				fail("Unexpected exception: "+t.getMessage());
 			}
 		}
-
-		{ // Negative case
-			Quadruple q = new Quadruple(5*0x100000000L,0,true);
-			Quadruple r = new Quadruple(4*0x100000000L,0,true);
+		{ // Opposite extreme case
+			SignificantDecimal sd = new SignificantDecimal(Long.MIN_VALUE,true).getNegative();
 			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(20,m.intValue());
-				assertEquals(new Quadruple(5*0x100000000L,0,true), q, "q not modified");
-				assertEquals(new Quadruple(4*0x100000000L,0,true), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Cross-sign case
-			Quadruple q = new Quadruple(5*0x100000000L,0,false);
-			Quadruple r = new Quadruple(5*0x100000000L,0,true);
-			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(-25,m.intValue());
-				assertEquals(new Quadruple(5*0x100000000L,0,false), q, "q not modified");
-				assertEquals(new Quadruple(5*0x100000000L,0,true), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Scaled case
-			Quadruple q = new Quadruple(5*0x100000000L,1,false);
-			Quadruple r = new Quadruple(4*0x100000000L,1,false);
-			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(2000,m.intValue());
-				assertEquals(new Quadruple(5*0x100000000L,1,false), q, "q not modified");
-				assertEquals(new Quadruple(4*0x100000000L,1,false), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Large case
-			Quadruple q = new Quadruple(5*0x100000000L,10,false);
-			Quadruple r = new Quadruple(4*0x100000000L,10,false);
-			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(new Quadruple(20*0x100000000L,20,false),m);
-				assertEquals(new Quadruple(5*0x100000000L,10,false), q, "q not modified");
-				assertEquals(new Quadruple(4*0x100000000L,10,false), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Cross-scale case
-			Quadruple q = new Quadruple(5*0x100000000L,1,false);
-			Quadruple r = new Quadruple(5*0x100000000L,10,false);
-			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(2500000000000L,m.longValue());
-				assertEquals(new Quadruple(5*0x100000000L,1,false), q, "q not modified");
-				assertEquals(new Quadruple(5*0x100000000L,10,false), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Floating point case
-			Quadruple q = new Quadruple(5*0x100000000L,-1,false);
-			Quadruple r = new Quadruple(5*0x100000000L,10,false);
-			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(25000000000L,m.longValue());
-				assertEquals(new Quadruple(5*0x100000000L,-1,false), q, "q not modified");
-				assertEquals(new Quadruple(5*0x100000000L,10,false), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Twice floating point case
-			Quadruple q = new Quadruple(5*0x100000000L,-1,false);
-			Quadruple r = new Quadruple(5*0x100000000L,-1,false);
-			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(new Quadruple(25*0x100000000L,-2,false),m);
-				assertEquals(new Quadruple(5*0x100000000L,-1,false), q, "q not modified");
-				assertEquals(new Quadruple(5*0x100000000L,-1,false), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Twice floating point case with large upper values
-			Quadruple q = new Quadruple(0x4000000000000008L,0,false);
-			Quadruple r = new Quadruple(0x4000000000000008L,0,false);
-			try {
-				Quadruple m = q.multiply(r);
-				// Note: This result has a little floating point rounding error in the least significant digit.
-				// Maybe this could be improved a little by tracking LL and using this value to round the least significant binary digit up sometimes.  
-				assertEquals("1000000000000003",Long.toHexString(m.longValue()),"Expected long value result.");
-				assertEquals(new Quadruple(0x4000000000000008L,0,false), q, "q not modified");
-				assertEquals(new Quadruple(0x4000000000000008L,0,false), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // 0xX
-			Quadruple q = new Quadruple(0);
-			Quadruple r = new Quadruple(5);
-			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(m.getZero(),m,"Expected result.");
-				assertEquals(new Quadruple(0), q, "q not modified");
-				assertEquals(new Quadruple(5), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Xx0
-			Quadruple q = new Quadruple(5);
-			Quadruple r = new Quadruple(0);
-			try {
-				Quadruple m = q.multiply(r);
-				assertEquals(m.getZero(),m,"Expected result.");
-				assertEquals(new Quadruple(5), q, "q not modified");
-				assertEquals(new Quadruple(0), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-		
-		{ // A case that caused some trouble
-			Quadruple q = new Quadruple(-3.29621897555450565065257251262664794921875);
-			Quadruple r = new Quadruple(1.18358655292489146930165588855743408203125);
-			assertEquals(new Quadruple(-3.29621897555450565065257251262664794921875), q, "q not modified");
-			assertEquals(new Quadruple(1.18358655292489146930165588855743408203125), r, "r not modified");
-			try {
-				Quadruple m = q.multiply(r);
-				assertEqualsWithinMargin(new Quadruple(-3.901360454962174),m,"Expected result.");
+				assertFalse(sd.isNegative());
+				assertTrue(sd.isExact());
+				assertEquals("[9.223372036854775808]x10^18",sd.toString());
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -499,6 +341,101 @@ class SignificantDecimalTest {
 		}
 	}
 
+	@Test
+	void testMultiply() {
+		{ // Simple case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.PI, 1);
+			try {
+				SignificantDecimal m = sd1.multiply(sd2);
+				assertEquals(new SignificantDecimal(9.0, 1),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Different significant digits case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.PI, 2);
+			try {
+				SignificantDecimal m = sd1.multiply(sd2);
+				assertEquals(new SignificantDecimal(9.7, 2),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Negative case
+			SignificantDecimal sd1 = new SignificantDecimal(-Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(-Math.PI, 2);
+			try {
+				SignificantDecimal m = sd1.multiply(sd2);
+				assertEquals(new SignificantDecimal(9.7, 2),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Cross-sign case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(-Math.PI, 2);
+			try {
+				SignificantDecimal m = sd1.multiply(sd2);
+				assertEquals(new SignificantDecimal(-9.7, 2),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Inexact times exact case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(3, true);
+			try {
+				SignificantDecimal m = sd1.multiply(sd2);
+				assertEquals(new SignificantDecimal(9.426, 4),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Inexact times exact with a carry in the leading place
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(4, true);
+			try {
+				SignificantDecimal m = sd1.multiply(sd2);
+				assertEquals(new SignificantDecimal(12.56, 4),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Exact times exact case
+			SignificantDecimal sd1 = new SignificantDecimal(51, true);
+			SignificantDecimal sd2 = new SignificantDecimal(3, true);
+			try {
+				SignificantDecimal m = sd1.multiply(sd2);
+				assertEquals(new SignificantDecimal(153, true),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+	}
+
+	/*
 	@Test
 	void testDivide() {
 		{ // Simple case

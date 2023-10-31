@@ -403,9 +403,9 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		boolean negative = this.negative^q.negative;
 		long orderOfMagnitude = this.orderOfMagnitude+q.orderOfMagnitude;
 		if(isZero()&&q.isZero())
-			return new SignificantDecimal(new int[0],orderOfMagnitude, negative, exact&&q.exact);
+			return new SignificantDecimal(new int[0],orderOfMagnitude, negative, exact||q.exact);
 		if(isZero()||q.isZero())
-			return new SignificantDecimal(new int[0],orderOfMagnitude+1, negative, exact&&q.exact);
+			return new SignificantDecimal(new int[0],orderOfMagnitude+1, negative, (isZero()&&exact)||(q.isZero()&&q.exact));
 		int[] digits = new int[this.significantDigits.length+q.significantDigits.length];
 		for(int i=0;i<this.significantDigits.length;i++)
 			for(int j=0;j<q.significantDigits.length;j++)
@@ -416,7 +416,26 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			carry = digits[i]/10;
 			digits[i]%=10;
 		}
-		int[] significantDigits = new int[Math.min(this.significantDigits.length,q.significantDigits.length)];
+		int significantDigitLength;
+		if(exact && q.exact) {
+			significantDigitLength=digits.length;
+			if(carry!=0)
+				significantDigitLength++;
+			for(int i=digits.length-1;i>=0;i--) {
+				if(digits[i]!=0)
+					break;
+				significantDigitLength--;
+			}
+		}
+		else {
+			if(exact)
+				significantDigitLength = q.significantDigits.length;
+			else if(q.exact)
+				significantDigitLength = this.significantDigits.length;
+			else
+				significantDigitLength = Math.min(this.significantDigits.length,q.significantDigits.length);
+		}
+		int[] significantDigits = new int[significantDigitLength];
 		if(carry==0) {
 			System.arraycopy(digits, 0, significantDigits, 0, significantDigits.length);
 		}
@@ -425,8 +444,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			significantDigits[0] = carry;
 			orderOfMagnitude++;
 		}
-		// TODO Handle double-exact multiplication.
-		return new SignificantDecimal(significantDigits,orderOfMagnitude,negative, false);
+		return new SignificantDecimal(significantDigits,orderOfMagnitude,negative, exact&&q.exact);
 	}
 	
 	/**
@@ -758,7 +776,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		String retval = negative?"-":"";
 		for(int i=0;i<significantDigits.length;i++) {
 			retval+=significantDigits[i];
-			if(i==0)
+			if((i==0)&&(significantDigits.length>1))
 				retval+=".";
 		}
 		if(exact)
