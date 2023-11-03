@@ -435,15 +435,14 @@ class SignificantDecimalTest {
 		}
 	}
 
-	/*
 	@Test
 	void testDivide() {
-		{ // Simple case
-			Quadruple q = new Quadruple(5*0x100000000L,0,false);
-			Quadruple r = new Quadruple(4*0x100000000L,0,false);
+		{ // Simple case (this also requires basic rounding up of the final decimal)
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 4);
 			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0x140000000L,0,false),m);
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(Math.PI/Math.E,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -452,11 +451,11 @@ class SignificantDecimalTest {
 		}
 
 		{ // Negative case
-			Quadruple q = new Quadruple(5*0x100000000L,0,true);
-			Quadruple r = new Quadruple(4*0x100000000L,0,true);
+			SignificantDecimal sd1 = new SignificantDecimal(-Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(-Math.E, 4);
 			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0x140000000L,0,false),m);
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(Math.PI/Math.E,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -465,11 +464,11 @@ class SignificantDecimalTest {
 		}
 
 		{ // Cross-sign case
-			Quadruple q = new Quadruple(5*0x100000000L,0,false);
-			Quadruple r = new Quadruple(4*0x100000000L,0,true);
+			SignificantDecimal sd1 = new SignificantDecimal(-Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 4);
 			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0x140000000L,0,true),m);
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(-Math.PI/Math.E,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -477,12 +476,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Scaled case
-			Quadruple q = new Quadruple(5*0x100000000L,1,false);
-			Quadruple r = new Quadruple(4*0x100000000L,1,false);
+		{ // Mismatched significant digits
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 2);
 			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0x140000000L,0,false),m);
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(Math.PI/Math.E,2),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -490,12 +489,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Large case
-			Quadruple q = new Quadruple(5*0x100000000L,10,false);
-			Quadruple r = new Quadruple(4*0x100000000L,10,false);
+		{ // Fancier rounding up
+			SignificantDecimal sd1 = new SignificantDecimal(0.9999, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(1.0, 2);
 			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0x140000000L,0,false),m);
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(1.0,2),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -503,12 +502,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Cross-scale case
-			Quadruple q = new Quadruple(5*0x100000000L,1,false);
-			Quadruple r = new Quadruple(4*0x100000000L,10,false);
+		{ // Exact case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(2,true);
 			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0x140000000L,-9,false),m);
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(Math.PI/2,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -516,38 +515,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Floating point case
-			Quadruple q = new Quadruple(5*0x100000000L,-1,false);
-			Quadruple r = new Quadruple(4*0x100000000L,10,false);
+		{ // Double-exact case
+			SignificantDecimal sd1 = new SignificantDecimal(3, true);
+			SignificantDecimal sd2 = new SignificantDecimal(2,true);
 			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0x140000000L,-11,false),m);
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Twice floating point case
-			Quadruple q = new Quadruple(5*0x100000000L,-1,false);
-			Quadruple r = new Quadruple(4*0x100000000L,-1,false);
-			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0x140000000L,0,false),m);
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Twice floating point case
-			Quadruple q = new Quadruple(0x5000000000000005L,0,false);
-			Quadruple r = new Quadruple(0x4000000000000004L,0,false);
-			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0x140000000L,0,false),m);
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals("[1.5]x10^0",m.toString());
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -556,10 +529,9 @@ class SignificantDecimalTest {
 		}
 		
 		{ // Divide by zero
-			Quadruple q = new Quadruple(0x5000000000000005L,0,false);
-			Quadruple r = new Quadruple(0);
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
 			try {
-				Quadruple m = q.divide(r);
+				SignificantDecimal m = sd1.divide(sd1.getZero());
 				fail("Expected exception");
 			}
 			catch(Throwable t) {
@@ -567,12 +539,37 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Divide zero
-			Quadruple q = new Quadruple(0);
-			Quadruple r = new Quadruple(0x4000000000000004L,0,false);
+		{ // Divide by inexact zero
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(0.0, 4);
 			try {
-				Quadruple m = q.divide(r);
-				assertEquals(q,m);
+				SignificantDecimal m = sd1.divide(sd2);
+				fail("Expected exception");
+			}
+			catch(Throwable t) {
+				// Expected case.
+			}
+		}
+
+		{ // Divide exact zero
+			SignificantDecimal sd1 = new SignificantDecimal(0,true);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 4);
+			try {
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(0,true),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Divide inexact zero
+			SignificantDecimal sd1 = new SignificantDecimal(0.0,4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 4);
+			try {
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(0.0,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -581,51 +578,11 @@ class SignificantDecimalTest {
 		}
 
 		{ // Divide equal numbers
-			Quadruple q = new Quadruple(0x4000000000000004L,0,false);
-			Quadruple r = new Quadruple(0x4000000000000004L,0,false);
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.PI, 4);
 			try {
-				Quadruple m = q.divide(r);
-				assertEqualsWithinMargin(new Quadruple(1),m,"a/a successful");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // A case that proved to be troublesome
-			Quadruple q = new Quadruple(1);
-			Quadruple r = new Quadruple(2);
-			try {
-				Quadruple m = q.divide(r);
-				assertEquals(new Quadruple(0.5),m);
-				assertEqualsWithinMargin(new Quadruple(0.5),m,"1/2 successful");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // A case that proved to be troublesome
-			Quadruple q = new Quadruple(1);
-			Quadruple r = new Quadruple(2);
-			try {
-				Quadruple m = q.divide(r).divide(r);
-				assertEqualsWithinMargin(new Quadruple(0.25),m,"(1/2)/2 successful");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // A case that proved to be troublesome
-			Quadruple q = new Quadruple(0.0000000017179868998937308788299560546875);
-			Quadruple r = new Quadruple(2);
-			try {
-				Quadruple m = q.divide(r);
-				assertEqualsWithinMargin(0.0000000017179868998937308788299560546875*1000000000/2.0,m.doubleValue()*1000000000,"0.0000000017179868998937308788299560546875/2 successful");
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(1.0,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -634,6 +591,7 @@ class SignificantDecimalTest {
 		}
 	}
 
+	/*
 	@Test
 	void testAdd() {
 		{ // Simple case

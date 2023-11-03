@@ -4,6 +4,7 @@
 package com.shtick.math.statistics;
 
 import java.security.InvalidParameterException;
+import java.util.Arrays;
 
 /**
  * A numeric class designed around scientific notation and the need to keep track of significant digits.
@@ -455,18 +456,18 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	public SignificantDecimal divide(SignificantDecimal q) {
 		if(q.isZero())
 			throw new IllegalArgumentException("Divide by zero.");
-		boolean negative = this.negative^q.negative;
-		long orderOfMagnitude = this.orderOfMagnitude - q.orderOfMagnitude;
 		if(this.isZero())
 			return this;
-		int[] resultDigits = new int[Math.min(this.significantDigits.length,q.significantDigits.length)];
+		boolean negative = this.negative^q.negative;
+		long orderOfMagnitude = this.orderOfMagnitude - q.orderOfMagnitude+1;
+		int[] resultDigits = new int[Math.min(this.significantDigits.length,q.significantDigits.length)+1];
 		int[] workingDigits = new int[Math.max(this.significantDigits.length,q.significantDigits.length)+1];
 		int[][] denominatorMultiples = new int[9][q.significantDigits.length];
 		for(int i=0;i<this.significantDigits.length;i++)
 			workingDigits[i+1] = this.significantDigits[i];
 		for(int d=1;d<10;d++) {
 			for(int i=q.significantDigits.length-1;i>=0;i--) {
-				denominatorMultiples[d-1][i] = d*q.significantDigits[i];
+				denominatorMultiples[d-1][i] += d*q.significantDigits[i];
 				if(i>0) {
 					denominatorMultiples[d-1][i-1] += denominatorMultiples[d-1][i]/10;
 					denominatorMultiples[d-1][i] %= 10;
@@ -477,11 +478,12 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		for(int i=0;i<resultDigits.length;i++) {
 			locator = workingDigits[0]/denominatorMultiples[0][0];
 			if(locator>0) {
-				// The result of dividing the whole number by the whole number will be locator or locator-1.
-				if(compareDigitsScaleless(workingDigits,denominatorMultiples[locator-1])>=0)
-					resultDigits[i] = locator;
-				else
-					resultDigits[i] = locator-1;
+				if(locator>10)
+					locator=9;
+				// The result of dividing the whole number by the whole number will be locator or somewhat less.
+				while(compareDigitsScaleless(workingDigits,denominatorMultiples[locator-1])<0)
+					locator--;
+				resultDigits[i] = locator;
 			}
 			else {
 				resultDigits[i] = 0;
@@ -489,9 +491,8 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 
 			if(resultDigits[i]>0) {
 				// Subtract resultDigit*divisor from the working digits.
-				for(int j=0;j<workingDigits.length;j++) {
+				for(int j=0;j<Math.min(workingDigits.length,denominatorMultiples[0].length);j++)
 					workingDigits[j] -= denominatorMultiples[resultDigits[i]-1][j];
-				}
 				for(int j=workingDigits.length-1;j>0;j--) {
 					// Do any necessary borrowing to get positive digits
 					if(workingDigits[j]<0) {
@@ -511,8 +512,26 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 				i--;
 			}
 		}
+		int[] finalResultDigits = new int[resultDigits.length-1];
+		System.arraycopy(resultDigits, 0, finalResultDigits, 0, finalResultDigits.length);
+		if(resultDigits[finalResultDigits.length]>=5) {
+			// Round up
+			finalResultDigits[finalResultDigits.length-1]++;
+			for(int i=finalResultDigits.length-1;i>=0;i--) {
+				if(finalResultDigits[i]<=9)
+					break;
+				finalResultDigits[i]=0;
+				if(i>0) {
+					finalResultDigits[i-1]++;
+				}
+				else {
+					finalResultDigits[i]=1;
+					orderOfMagnitude++;
+				}
+			}
+		}
 		// TODO Handle double-exact division
-		return new SignificantDecimal(resultDigits,orderOfMagnitude,negative, false);
+		return new SignificantDecimal(finalResultDigits,orderOfMagnitude,negative, false);
 	}
 
 	/**
