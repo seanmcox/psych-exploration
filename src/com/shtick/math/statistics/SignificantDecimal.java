@@ -9,7 +9,6 @@ import java.util.Arrays;
 /**
  * A numeric class designed around scientific notation and the need to keep track of significant digits.
  * 
- * TODO Handle modeling of exact numbers
  * TODO When does it make sense to keep track of nominally insignificant digits to promote greater accuracy in an overall operation?
  * For addition, it might seem like it makes sense to keep all of the most to least significant digits, except what about cases like this:
  * 
@@ -209,6 +208,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	 * @param orderOfMagnitude The order of magnitude of the leading digit.
 	 *                         For 0-valued ScientificDecimals, the orderOfMagnitude identifies the lowest known 0 place value. (By which is meant, the place value that is taken to be 0 +/- 1.)
 	 * @param negative
+	 * @param exact
 	 */
 	public SignificantDecimal(int[] significantDigits, long orderOfMagnitude, boolean negative, boolean exact) {
 		super();
@@ -227,6 +227,42 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		this.exact=exact;
 	}
 	
+	/**
+	 * Takes an array of digits which is longer than the number of digits to be present in the final number
+	 * and rounds it to the right number digits for the final number. This constructor will properly handle
+	 * rounding 9.99 down to 2 digits to generate a result of 10.
+	 * 
+	 * Should not be used to express a value of zero.
+	 * 
+	 * @param digits
+	 * @param significantDigitCount The number of significant digits to round to.
+	 * @param orderOfMagnitude The order of magnitude of the digits.
+	 * @param negative
+	 */
+	private SignificantDecimal(int[] digits, int significantDigitCount, long orderOfMagnitude, boolean negative) {
+		super();
+		this.significantDigits = new int[significantDigitCount];
+		System.arraycopy(digits, 0, this.significantDigits, 0, significantDigitCount);
+		if(significantDigits[0]==0)
+			throw new NumberFormatException("Leading digits cannot be 0 for non-zero value, and significantDigits should be an empty array for a 0-valued ScientificDecimal.");
+		if(digits[significantDigitCount]>=5) {
+			this.significantDigits[significantDigitCount-1]++;
+			for(int i=significantDigitCount-1;i>0;i--) {
+				if(this.significantDigits[i]<=9)
+					break;
+				this.significantDigits[i]=0;
+				this.significantDigits[i-1]++;
+			}
+			if(this.significantDigits[0]>9) {
+				this.significantDigits[0]=1;
+				orderOfMagnitude++;
+			}
+		}
+		this.orderOfMagnitude = orderOfMagnitude;
+		this.negative = negative;
+		this.exact=false;
+	}
+
 	/**
 	 * 
 	 * @param value A positive (ie. absolute value) integer
@@ -438,25 +474,30 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 					break;
 				significantDigitLength--;
 			}
+			int[] d = new int[significantDigitLength];
+			if(carry>0) {
+				d[0] = carry;
+				System.arraycopy(digits, 0, d, 1, significantDigitLength-1);
+				orderOfMagnitude++;
+			}
+			else {
+				System.arraycopy(digits, 0, d, 0, significantDigitLength);
+			}
+			return new SignificantDecimal(d,orderOfMagnitude,negative,true);
 		}
-		else {
-			if(exact)
-				significantDigitLength = q.significantDigits.length;
-			else if(q.exact)
-				significantDigitLength = this.significantDigits.length;
-			else
-				significantDigitLength = Math.min(this.significantDigits.length,q.significantDigits.length);
-		}
-		int[] significantDigits = new int[significantDigitLength];
-		if(carry==0) {
-			System.arraycopy(digits, 0, significantDigits, 0, significantDigits.length);
-		}
-		else {
-			System.arraycopy(digits, 0, significantDigits, 1, significantDigits.length-1);
-			significantDigits[0] = carry;
+		if(exact)
+			significantDigitLength = q.significantDigits.length;
+		else if(q.exact)
+			significantDigitLength = this.significantDigits.length;
+		else
+			significantDigitLength = Math.min(this.significantDigits.length,q.significantDigits.length);
+		if(carry>0) {
+			for(int i=significantDigitLength;i>0;i--)
+				digits[i]=digits[i-1];
+			digits[0] = carry;
 			orderOfMagnitude++;
 		}
-		return new SignificantDecimal(significantDigits,orderOfMagnitude,negative, exact&&q.exact);
+		return new SignificantDecimal(digits, significantDigitLength, orderOfMagnitude, negative);
 	}
 	
 	/**
@@ -557,25 +598,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			return new SignificantDecimal(finalResultDigits,orderOfMagnitude,negative, true);
 		}
 		// Make sure to properly round the last digit for the inexact result.
-		int[] finalResultDigits = new int[numberOfSignificantDigits];
-		System.arraycopy(resultDigits, 0, finalResultDigits, 0, numberOfSignificantDigits);
-		if(resultDigits[finalResultDigits.length]>=5) {
-			// Round up
-			finalResultDigits[finalResultDigits.length-1]++;
-			for(int i=finalResultDigits.length-1;i>=0;i--) {
-				if(finalResultDigits[i]<=9)
-					break;
-				finalResultDigits[i]=0;
-				if(i>0) {
-					finalResultDigits[i-1]++;
-				}
-				else {
-					finalResultDigits[i]=1;
-					orderOfMagnitude++;
-				}
-			}
-		}
-		return new SignificantDecimal(finalResultDigits,orderOfMagnitude,negative, false);
+		return new SignificantDecimal(resultDigits, numberOfSignificantDigits, orderOfMagnitude, negative);
 	}
 
 	/**
@@ -638,6 +661,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	/**
 	 * eg. round(1) called on 3.14159x10^0 would yield 3*10^0
 	 * eg. round(4) called on 3.14159x10^0 would yield 3.142*10^0
+	 * eg. round(2) called on 9.999x10^0 would yield 1.00*10^1
 	 * 
 	 * @param digitToRound Identifies the digit to round. (Must be greater than 1 and less than the number of significant digits.)
 	 * @return

@@ -425,7 +425,7 @@ class SignificantDecimalTest {
 			SignificantDecimal sd2 = new SignificantDecimal(4, true);
 			try {
 				SignificantDecimal m = sd1.multiply(sd2);
-				assertEquals(new SignificantDecimal(12.56, 4),m);
+				assertEquals(new SignificantDecimal(12.57, 4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -439,6 +439,19 @@ class SignificantDecimalTest {
 			try {
 				SignificantDecimal m = sd1.multiply(sd2);
 				assertEquals(new SignificantDecimal(153, true),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Test extreme rounding
+			SignificantDecimal sd1 = new SignificantDecimal(3.3333, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(3.0, 2);
+			try {
+				SignificantDecimal m = sd1.multiply(sd2);
+				assertEquals(new SignificantDecimal(10.0, 2),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -595,6 +608,19 @@ class SignificantDecimalTest {
 			try {
 				SignificantDecimal m = sd1.divide(sd2);
 				assertEquals(new SignificantDecimal(1.0,4),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Test extreme rounding
+			SignificantDecimal sd1 = new SignificantDecimal(9.999, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(10.0, 2);
+			try {
+				SignificantDecimal m = sd1.divide(sd2);
+				assertEquals(new SignificantDecimal(1.0,2),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
