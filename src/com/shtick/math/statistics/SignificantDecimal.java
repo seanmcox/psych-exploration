@@ -116,9 +116,20 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		int[] digits = getDigits(mantissa,0);
 		for(int i=0;i<Math.min(significantDigits, digits.length);i++)
 			this.significantDigits[i] = digits[i];
-		if((significantDigits<digits.length)&&(digits[significantDigits]>=5))
-			this.significantDigits[significantDigits-1]++;
 		this.orderOfMagnitude = decimalExponent+digits.length-1;
+		if((significantDigits<digits.length)&&(digits[significantDigits]>=5)) {
+			this.significantDigits[significantDigits-1]++;
+			for(int i = significantDigits-1;i>0;i--) {
+				if(this.significantDigits[i]<=9)
+					break;
+				this.significantDigits[i]=0;
+				this.significantDigits[i-1]++;
+			}
+			if(this.significantDigits[0]>9) {
+				this.significantDigits[0]=1;
+				this.orderOfMagnitude++;
+			}
+		}
 	}
 
 	/**
@@ -451,7 +462,11 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	/**
 	 * 
 	 * @param q
-	 * @return The result of division.
+	 * @return The result of division. If this SignificantDecimal and q are both exact, the result might be
+	 *         inexact due to the possibility that such division might require an infinite number of digits
+	 *         to represent. (This doesn't mean that this is required to produce an inexact result. The result
+	 *         will be rendered as inexact if it simply has too many digits before the calculation is
+	 *         completed.)
 	 */
 	public SignificantDecimal divide(SignificantDecimal q) {
 		if(q.isZero())
@@ -597,10 +612,20 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	 * @return The result of addition.
 	 */
 	public SignificantDecimal add(SignificantDecimal q) {
-		if(q.isZero())
-			return this;
-		if(isZero())
-			return q;
+		if(q.isZero()) {
+			if(q.exact||(q.orderOfMagnitude<=(this.orderOfMagnitude-this.significantDigits.length+1)))
+				return this;
+			if(q.orderOfMagnitude>this.orderOfMagnitude)
+				return q;
+			return this.round((int)(this.orderOfMagnitude-q.orderOfMagnitude+1));
+		}
+		if(isZero()) {
+			if(exact||(this.orderOfMagnitude<=(q.orderOfMagnitude-q.significantDigits.length+1)))
+				return q;
+			if(this.orderOfMagnitude>q.orderOfMagnitude)
+				return this;
+			return q.round((int)(q.orderOfMagnitude-this.orderOfMagnitude+1));
+		}
 
 		if(this.negative^q.negative) {
 			if(absCompareTo(this,q)>=0)
@@ -608,6 +633,37 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			return absSubtract(q,this,q.negative);
 		}
 		return absAdd(this,q,this.negative);
+	}
+	
+	/**
+	 * eg. round(1) called on 3.14159x10^0 would yield 3*10^0
+	 * eg. round(4) called on 3.14159x10^0 would yield 3.142*10^0
+	 * 
+	 * @param digitToRound Identifies the digit to round. (Must be greater than 1 and less than the number of significant digits.)
+	 * @return
+	 */
+	private SignificantDecimal round(int digitToRound) {
+		if(digitToRound<=0)
+			throw new RuntimeException("round called with an invalid digit.");
+		if(digitToRound>=this.significantDigits.length)
+			throw new RuntimeException("round called with no rounding");
+		int[] retvalDigits = new int[digitToRound];
+		System.arraycopy(this.significantDigits, 0, retvalDigits, 0, digitToRound);
+		if(this.significantDigits[digitToRound]>=5)
+			retvalDigits[digitToRound-1]++;
+		for(int i = digitToRound-1;i>0;i--) {
+			if(retvalDigits[i]<=9)
+				break;
+			retvalDigits[i]=0;
+			retvalDigits[i-1]++;
+		}
+		long orderOfMagnitude = this.orderOfMagnitude;
+		if(retvalDigits[0]>9) {
+			retvalDigits = new int[digitToRound+1];
+			retvalDigits[0]=1;
+			orderOfMagnitude++;
+		}
+		return new SignificantDecimal(retvalDigits,orderOfMagnitude,this.negative,false);
 	}
 	
 	/**

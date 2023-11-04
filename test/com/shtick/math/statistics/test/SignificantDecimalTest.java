@@ -69,6 +69,18 @@ class SignificantDecimalTest {
 				fail("Unexpected exception: "+t.getMessage());
 			}
 		}
+		{ // Extreme rounding.
+			SignificantDecimal sd = new SignificantDecimal(9.9999,2);
+			try {
+				assertFalse(sd.isNegative());
+				assertFalse(sd.isExact());
+				assertEquals("1.0x10^1",sd.toString());
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
 	}
 
 	@Test
