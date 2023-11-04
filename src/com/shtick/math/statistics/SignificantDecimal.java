@@ -460,7 +460,20 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			return this;
 		boolean negative = this.negative^q.negative;
 		long orderOfMagnitude = this.orderOfMagnitude - q.orderOfMagnitude+1;
-		int[] resultDigits = new int[Math.min(this.significantDigits.length,q.significantDigits.length)+1];
+		int numberOfSignificantDigits;
+		if(this.exact) {
+			if(q.exact)
+				numberOfSignificantDigits = Math.max(this.significantDigits.length,q.significantDigits.length)+10;
+			else
+				numberOfSignificantDigits = q.significantDigits.length;
+		}
+		else if(q.exact){
+			numberOfSignificantDigits = this.significantDigits.length;
+		}
+		else {
+			numberOfSignificantDigits = Math.min(this.significantDigits.length,q.significantDigits.length);
+		}
+		int[] resultDigits = new int[numberOfSignificantDigits+1];
 		int[] workingDigits = new int[Math.max(this.significantDigits.length,q.significantDigits.length)+1];
 		int[][] denominatorMultiples = new int[9][q.significantDigits.length];
 		for(int i=0;i<this.significantDigits.length;i++)
@@ -475,14 +488,22 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			}
 		}
 		int locator;
-		for(int i=0;i<resultDigits.length;i++) {
+		boolean workingDigitsZero = false;
+		for(int i=0;(i<resultDigits.length)&&(!workingDigitsZero);i++) {
 			locator = workingDigits[0]/denominatorMultiples[0][0];
 			if(locator>0) {
 				if(locator>10)
 					locator=9;
 				// The result of dividing the whole number by the whole number will be locator or somewhat less.
-				while(compareDigitsScaleless(workingDigits,denominatorMultiples[locator-1])<0)
+				int compare = compareDigitsScaleless(workingDigits,denominatorMultiples[locator-1]);
+				while(compare<0) {
 					locator--;
+					if(locator==0)
+						break;
+					compare = compareDigitsScaleless(workingDigits,denominatorMultiples[locator-1]);
+				}
+				if(compare==0)
+					workingDigitsZero=true; // Working Digits will become exactly zero after the subtraction
 				resultDigits[i] = locator;
 			}
 			else {
@@ -512,8 +533,17 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 				i--;
 			}
 		}
-		int[] finalResultDigits = new int[resultDigits.length-1];
-		System.arraycopy(resultDigits, 0, finalResultDigits, 0, finalResultDigits.length);
+		if(this.exact&&q.exact&&workingDigitsZero) {
+			// Trim the exact result.
+			while(resultDigits[numberOfSignificantDigits-1]==0)
+				numberOfSignificantDigits--;
+			int[] finalResultDigits = new int[numberOfSignificantDigits];
+			System.arraycopy(resultDigits, 0, finalResultDigits, 0, numberOfSignificantDigits);
+			return new SignificantDecimal(finalResultDigits,orderOfMagnitude,negative, true);
+		}
+		// Make sure to properly round the last digit for the inexact result.
+		int[] finalResultDigits = new int[numberOfSignificantDigits];
+		System.arraycopy(resultDigits, 0, finalResultDigits, 0, numberOfSignificantDigits);
 		if(resultDigits[finalResultDigits.length]>=5) {
 			// Round up
 			finalResultDigits[finalResultDigits.length-1]++;
@@ -530,12 +560,11 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 				}
 			}
 		}
-		// TODO Handle double-exact division
 		return new SignificantDecimal(finalResultDigits,orderOfMagnitude,negative, false);
 	}
 
 	/**
-	 * Intended to compare two arrays of integers in which all values are greater than 0 and less than 10, except the first value.
+	 * Intended to compare two arrays of integers in which all values are greater than or equal to 0 and less than 10, except the first value.
 	 * It is expected that the first value in the numbers might be greater than 10 but less than 100 as it may contain an overflow digit.
 	 * 
 	 * @param a
@@ -549,10 +578,12 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			if(b[i]>a[i])
 				return -1;
 		}
-		if(a.length>b.length)
-			return 1;
-		if(b.length>a.length)
-			return -1;
+		for(int i=Math.min(a.length, b.length);i<a.length;i++)
+			if(a[i]>0)
+				return 1;
+		for(int i=Math.min(a.length, b.length);i<b.length;i++)
+			if(b[i]>0)
+				return -1;
 		return 0;
 	}
 	

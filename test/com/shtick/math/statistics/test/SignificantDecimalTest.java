@@ -516,7 +516,7 @@ class SignificantDecimalTest {
 		}
 
 		{ // Double-exact case
-			SignificantDecimal sd1 = new SignificantDecimal(3, true);
+			SignificantDecimal sd1 = new SignificantDecimal(3,true);
 			SignificantDecimal sd2 = new SignificantDecimal(2,true);
 			try {
 				SignificantDecimal m = sd1.divide(sd2);
