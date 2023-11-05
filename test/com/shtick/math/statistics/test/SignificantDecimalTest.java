@@ -629,15 +629,14 @@ class SignificantDecimalTest {
 		}
 	}
 
-	/*
 	@Test
 	void testAdd() {
 		{ // Simple case
-			Quadruple q = new Quadruple(5*0x100000000L,0,false);
-			Quadruple r = new Quadruple(4*0x100000000L,0,false);
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 4);
 			try {
-				Quadruple m = q.add(r);
-				assertEquals(9,m.intValue());
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(5.860,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -646,11 +645,11 @@ class SignificantDecimalTest {
 		}
 
 		{ // Negative case
-			Quadruple q = new Quadruple(5*0x100000000L,0,true);
-			Quadruple r = new Quadruple(4*0x100000000L,0,true);
+			SignificantDecimal sd1 = new SignificantDecimal(-Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(-Math.E, 4);
 			try {
-				Quadruple m = q.add(r);
-				assertEquals(-9,m.intValue());
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(-5.860,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -658,12 +657,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Cross-sign case
-			Quadruple q = new Quadruple(5*0x100000000L,0,false);
-			Quadruple r = new Quadruple(5*0x100000000L,0,true);
+		{ // Positive+negative case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(-Math.E, 4);
 			try {
-				Quadruple m = q.add(r);
-				assertEquals(0,m.intValue());
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(0.424,3),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -671,12 +670,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Scaled case
-			Quadruple q = new Quadruple(5*0x100000000L,1,false);
-			Quadruple r = new Quadruple(4*0x100000000L,1,false);
+		{ // Negative+positive case
+			SignificantDecimal sd1 = new SignificantDecimal(-Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 4);
 			try {
-				Quadruple m = q.add(r);
-				assertEquals(90,m.intValue());
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(-0.424,3),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -684,12 +683,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Large case
-			Quadruple q = new Quadruple(5*0x100000000L,10,false);
-			Quadruple r = new Quadruple(4*0x100000000L,10,false);
+		{ // Scale mismatch case (needs to round up that last digit to get the right answer)
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI*10, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 4);
 			try {
-				Quadruple m = q.add(r);
-				assertEquals(new Quadruple(9*0x100000000L,10,false),m);
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(34.14,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -697,12 +696,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Cross-scale case
-			Quadruple q = new Quadruple(5*0x100000000L,1,false);
-			Quadruple r = new Quadruple(5*0x100000000L,10,false);
+		{ // Scale mismatch case with a negative and a round up
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI*10, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(-2.712, 4);
 			try {
-				Quadruple m = q.add(r);
-				assertEquals(50000000050L,m.longValue());
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(28.71,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -710,12 +709,12 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Floating point case
-			Quadruple q = new Quadruple(5*0x100000000L,-1,false);
-			Quadruple r = new Quadruple(5*0x100000000L,10,false);
+		{ // Extreme scale mismatch case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI*1000, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E/1000, 4);
 			try {
-				Quadruple m = q.add(r);
-				assertEquals(new Quadruple(Long.parseLong("1dcd650000000000",16)+(5*0x100000000L)/1000,2,false),m);
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(3142.0,4),m);
 			}
 			catch(Throwable t) {
 				t.printStackTrace();
@@ -723,63 +722,9 @@ class SignificantDecimalTest {
 			}
 		}
 
-		{ // Twice floating point case
-			Quadruple q = new Quadruple(5*0x100000000L,-1,false);
-			Quadruple r = new Quadruple(5*0x100000000L,-1,false);
-			try {
-				Quadruple m = q.add(r);
-				assertEquals(new Quadruple(1*0x100000000L,0,false),m);
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Twice floating point case
-			Quadruple q = new Quadruple(0x4000000000000002L,0,false);
-			Quadruple r = new Quadruple(0x4000000000000002L,0,false);
-			try {
-				Quadruple m = q.add(r);
-				assertEquals(new Quadruple(0x8000000000000004L,0,false),m);
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Another case (r value is greater than q value, and opposite signs.)
-			Quadruple q = new Quadruple(4.99999999998201309777796268463134765625);
-			Quadruple r = new Quadruple(-4.9999999999999999976716935634613037109375);
-			try {
-				Quadruple m = q.add(r);
-				assertEqualsWithinMargin(m.getZero(), m, "Adding similar opposite-signed numbers.");
-				assertEquals(new Quadruple(4.99999999998201309777796268463134765625), q, "q not modified");
-				assertEquals(new Quadruple(-4.9999999999999999976716935634613037109375), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
-
-		{ // Another case (addition should cause a carry in the maximal binary digits) that was proving troublesome
-			Quadruple q = new Quadruple(2.227901745543820726685225963592529296875);
-			Quadruple r = new Quadruple(2.2279010511616673874668776988983154296875);
-			try {
-				Quadruple m = q.add(r);
-				assertEqualsWithinMargin(new Quadruple(4.45580279670548814348876476287841796875), m, "Adding similar opposite-signed numbers.");
-				assertEquals(new Quadruple(2.227901745543820726685225963592529296875), q, "q not modified");
-				assertEquals(new Quadruple(2.2279010511616673874668776988983154296875), r, "r not modified");
-			}
-			catch(Throwable t) {
-				t.printStackTrace();
-				fail("Unexpected exception: "+t.getMessage());
-			}
-		}
 	}
 
+	/*
 	@Test
 	void testSqrt() {
 		{ // Simple case

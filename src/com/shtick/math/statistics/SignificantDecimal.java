@@ -703,6 +703,18 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		long lowA = a.orderOfMagnitude-a.significantDigits.length+1;
 		long lowB = b.orderOfMagnitude-b.significantDigits.length+1;
 		long orderOfMagnitude = Math.max(highA, highB);
+		long lowestDigitToKeep;
+		boolean roundLastDigitOut=true;
+		if(lowA==lowB) {
+			lowestDigitToKeep = lowA;
+			roundLastDigitOut=false;
+		}
+		else if(lowA>lowB) {
+			lowestDigitToKeep = lowA-1;
+		}
+		else {
+			lowestDigitToKeep = lowB-1;
+		}
 
 		// TODO Handle double-exact addition
 		// If b is insignificant.
@@ -713,7 +725,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			return new SignificantDecimal(b.significantDigits, b.orderOfMagnitude, negative, false);
 
 		// Add decimal places
-		int[] returnDigits = new int[(int)(orderOfMagnitude-Math.max(lowA, lowB)+1)];
+		int[] returnDigits = new int[(int)(orderOfMagnitude-lowestDigitToKeep+1)];
 		long magnitude;
 		for(int i=0;i<returnDigits.length;i++) {
 			magnitude = orderOfMagnitude-i;
@@ -736,7 +748,10 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 				newReturnDigits[i+1] = returnDigits[i];
 		}
 		
-		return new SignificantDecimal(returnDigits, orderOfMagnitude, negative, false);
+		SignificantDecimal retval = new SignificantDecimal(returnDigits, orderOfMagnitude, negative, false);
+		if(roundLastDigitOut)
+			retval=retval.round(retval.significantDigits.length-1);
+		return retval;
 	}
 	
 	/**
@@ -790,8 +805,10 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		
 		// Borrow
 		for(int i=workingDigits.length-1;i>0;i--) {
-			workingDigits[i-1]--;
-			workingDigits[i] += 10;
+			if(workingDigits[i]<0) {
+				workingDigits[i-1]--;
+				workingDigits[i] += 10;
+			}
 		}
 		// Round
 		int digitsToRound = (int)Math.abs(lowA-lowB);
@@ -810,10 +827,9 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		// Assemble result.
 		int exWorkingDigitCount = 0;
 		for(int i=0;i<workingDigits.length;i++) {
-			if(i==0)
-				exWorkingDigitCount--;
-			else
+			if(workingDigits[i]!=0)
 				break;
+			exWorkingDigitCount++;
 		}
 		orderOfMagnitude-=exWorkingDigitCount;
 		int[] returnDigits = new int[(int)(orderOfMagnitude-Math.max(lowA, lowB)+1)];
