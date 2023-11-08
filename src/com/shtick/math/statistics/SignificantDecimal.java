@@ -200,6 +200,20 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		if(wasMinValue)
 			this.significantDigits[this.significantDigits.length-1]++;
 		this.orderOfMagnitude = this.significantDigits.length-1;
+		// Trim trailing zeros if exact
+		if(exact) {
+			int trailCount=0;
+			for(int i=this.significantDigits.length-1;i>0;i--) {
+				if(this.significantDigits[i]!=0)
+					break;
+				trailCount++;
+			}
+			if(trailCount>0) {
+				int[] newDigits = new int[this.significantDigits.length-trailCount];
+				System.arraycopy(this.significantDigits, 0, newDigits, 0, newDigits.length);
+				this.significantDigits=newDigits;
+			}
+		}
 	}
 	
 	/**
@@ -710,18 +724,29 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			roundLastDigitOut=false;
 		}
 		else if(lowA>lowB) {
-			lowestDigitToKeep = lowA-1;
+			if(a.exact) {
+				lowestDigitToKeep = lowB;
+				roundLastDigitOut=false;
+			}
+			else {
+				lowestDigitToKeep = lowA-1;
+			}
 		}
 		else {
-			lowestDigitToKeep = lowB-1;
+			if(b.exact) {
+				lowestDigitToKeep = lowA;
+				roundLastDigitOut=false;
+			}
+			else {
+				lowestDigitToKeep = lowB-1;
+			}
 		}
-
-		// TODO Handle double-exact addition
+		
 		// If b is insignificant.
-		if(highB<(lowA-1))
+		if(highB<lowestDigitToKeep)
 			return new SignificantDecimal(a.significantDigits, a.orderOfMagnitude, negative, false);
 		// If a is insignificant.
-		if(highA<(lowB-1))
+		if(highA<lowestDigitToKeep)
 			return new SignificantDecimal(b.significantDigits, b.orderOfMagnitude, negative, false);
 
 		// Add decimal places
@@ -748,7 +773,7 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 				newReturnDigits[i+1] = returnDigits[i];
 		}
 		
-		SignificantDecimal retval = new SignificantDecimal(returnDigits, orderOfMagnitude, negative, false);
+		SignificantDecimal retval = new SignificantDecimal(returnDigits, orderOfMagnitude, negative, a.exact&&b.exact);
 		if(roundLastDigitOut)
 			retval=retval.round(retval.significantDigits.length-1);
 		return retval;
@@ -786,14 +811,37 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 		long lowA = a.orderOfMagnitude-a.significantDigits.length+1;
 		long lowB = b.orderOfMagnitude-b.significantDigits.length+1;
 		long orderOfMagnitude = highA;
+		long lowestDigitToKeep;
+		boolean roundLastDigitOut=true;
+		if(lowA==lowB) {
+			lowestDigitToKeep = lowA;
+			roundLastDigitOut=false;
+		}
+		else if(lowA>lowB) {
+			if(a.exact) {
+				lowestDigitToKeep = lowB;
+				roundLastDigitOut=false;
+			}
+			else {
+				lowestDigitToKeep = lowA-1;
+			}
+		}
+		else {
+			if(b.exact) {
+				lowestDigitToKeep = lowA;
+				roundLastDigitOut=false;
+			}
+			else {
+				lowestDigitToKeep = lowB-1;
+			}
+		}
 		
-		// TODO Handle double-exact subtraction
 		// If b is insignificant.
-		if(highB<(lowA-1))
+		if(highB<lowestDigitToKeep)
 			return new SignificantDecimal(a.significantDigits, a.orderOfMagnitude, negative, false);
-
+		
 		// Add decimal places
-		int[] workingDigits = new int[(int)(orderOfMagnitude-Math.min(lowA, lowB)+1)];
+		int[] workingDigits = new int[(int)(orderOfMagnitude-lowestDigitToKeep+1)];
 		long magnitude;
 		for(int i=0;i<workingDigits.length;i++) {
 			magnitude = orderOfMagnitude-i;
@@ -810,20 +858,6 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 				workingDigits[i] += 10;
 			}
 		}
-		// Round
-		int digitsToRound = (int)Math.abs(lowA-lowB);
-		if(digitsToRound>0) {
-			if(workingDigits[workingDigits.length-digitsToRound]>=5)
-				workingDigits[workingDigits.length-digitsToRound-1]++;
-			for(int i=workingDigits.length-digitsToRound-1;i>0;i--) {
-				if(workingDigits[i]>=10) {
-					workingDigits[i]%=10;
-					workingDigits[i-1]++;
-					continue;
-				}
-				break;
-			}
-		}
 		// Assemble result.
 		int exWorkingDigitCount = 0;
 		for(int i=0;i<workingDigits.length;i++) {
@@ -832,11 +866,14 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 			exWorkingDigitCount++;
 		}
 		orderOfMagnitude-=exWorkingDigitCount;
-		int[] returnDigits = new int[(int)(orderOfMagnitude-Math.max(lowA, lowB)+1)];
+		int[] returnDigits = new int[(int)(orderOfMagnitude-lowestDigitToKeep+1)];
 		for(int i=0;i<returnDigits.length;i++)
 			returnDigits[i] = workingDigits[i+exWorkingDigitCount];
 		
-		return new SignificantDecimal(returnDigits, orderOfMagnitude, negative, false);
+		SignificantDecimal retval = new SignificantDecimal(returnDigits, orderOfMagnitude, negative, a.exact&&b.exact);
+		if(roundLastDigitOut)
+			retval=retval.round(retval.significantDigits.length-1);
+		return retval;
 	}
 	
 	@Override
