@@ -785,10 +785,20 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	 * @return The result of subtraction.
 	 */
 	public SignificantDecimal subtract(SignificantDecimal q) {
-		if(q.isZero())
-			return this;
-		if(isZero())
-			return q.getNegative();
+		if(q.isZero()) {
+			if(q.exact||(q.orderOfMagnitude<=(this.orderOfMagnitude-this.significantDigits.length+1)))
+				return this;
+			if(q.orderOfMagnitude>this.orderOfMagnitude)
+				return q;
+			return this.round((int)(this.orderOfMagnitude-q.orderOfMagnitude+1));
+		}
+		if(isZero()) {
+			if(exact||(this.orderOfMagnitude<=(q.orderOfMagnitude-q.significantDigits.length+1)))
+				return q.getNegative();
+			if(this.orderOfMagnitude>q.orderOfMagnitude)
+				return this;
+			return q.round((int)(q.orderOfMagnitude-this.orderOfMagnitude+1)).getNegative();
+		}
 
 		if(this.negative^q.negative)
 			return absAdd(this,q,this.negative);
@@ -957,10 +967,15 @@ public class SignificantDecimal extends ArithmeticNumber<SignificantDecimal> {
 	@Override
 	public String toString() {
 		String retval = negative?"-":"";
-		for(int i=0;i<significantDigits.length;i++) {
-			retval+=significantDigits[i];
-			if((i==0)&&(significantDigits.length>1))
-				retval+=".";
+		if(isZero()) {
+			retval="0";
+		}
+		else {
+			for(int i=0;i<significantDigits.length;i++) {
+				retval+=significantDigits[i];
+				if((i==0)&&(significantDigits.length>1))
+					retval+=".";
+			}
 		}
 		if(exact)
 			retval="["+retval+"]";

@@ -898,6 +898,322 @@ class SignificantDecimalTest {
 				fail("Unexpected exception: "+t.getMessage());
 			}
 		}
+
+		{ // Exact plus inexact
+			SignificantDecimal sd1 = new SignificantDecimal(5,true);
+			SignificantDecimal sd2 = new SignificantDecimal(2,false);
+			try {
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(7, false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Inexact plus exact
+			SignificantDecimal sd1 = new SignificantDecimal(5,false);
+			SignificantDecimal sd2 = new SignificantDecimal(2,true);
+			try {
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(7, false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Exact plus inexact at different scales
+			SignificantDecimal sd1 = new SignificantDecimal(500,true);
+			SignificantDecimal sd2 = new SignificantDecimal(2,false);
+			try {
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(502, false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Inexact plus exact at different scales
+			SignificantDecimal sd1 = new SignificantDecimal(new int[] {5},2,false,false);
+			SignificantDecimal sd2 = new SignificantDecimal(2,true);
+			try {
+				SignificantDecimal m = sd1.add(sd2);
+				assertEquals(new SignificantDecimal(new int[] {5},2,false,false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+	}
+
+
+	@Test
+	void testSubtract() {
+		{ // Simple case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 4);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(0.424,3),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Negative case
+			SignificantDecimal sd1 = new SignificantDecimal(-Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(-Math.E, 4);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(-0.424,3),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Positive+negative case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(-Math.E, 4);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(5.860,4),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Negative+positive case
+			SignificantDecimal sd1 = new SignificantDecimal(-Math.PI, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E, 4);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(-5.860,4),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Scale mismatch case (needs to round up that last digit to get the right answer)
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI*10, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(2.712, 4);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(28.71,4),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Scale mismatch case with a negative and a round up
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI*10, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(-Math.E, 4);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(34.14,4),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Extreme scale mismatch case
+			SignificantDecimal sd1 = new SignificantDecimal(Math.PI*1000, 4);
+			SignificantDecimal sd2 = new SignificantDecimal(Math.E/1000, 4);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(3142.0,4),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Dueling zeros
+			SignificantDecimal sd1 = new SignificantDecimal(new int[0],1,false, false);
+			SignificantDecimal sd2 = new SignificantDecimal(new int[0],-1,false, false);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(sd1,m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Zero vs insignificant non-zero
+			SignificantDecimal sd1 = new SignificantDecimal(new int[0],1,false, false);
+			SignificantDecimal sd2 = new SignificantDecimal(new int[] {1},-1,false, false);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(sd1,m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Zero vs significant non-zero
+			SignificantDecimal sd1 = new SignificantDecimal(new int[0],1,false, false);
+			SignificantDecimal sd2 = new SignificantDecimal(new int[] {1},1,false, false);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(sd2.getNegative(),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Zero vs boundary crossing non-zero
+			SignificantDecimal sd1 = new SignificantDecimal(new int[0],1,false, false);
+			SignificantDecimal sd2 = new SignificantDecimal(new int[] {1,2,3},2,false, false);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(new int[] {1,2},2,true, false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Exact zero vs boundary crossing non-zero
+			SignificantDecimal sd1 = new SignificantDecimal(new int[0],1,false, true);
+			SignificantDecimal sd2 = new SignificantDecimal(new int[] {1,2,3},2,false, false);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(sd2.getNegative(),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Zero vs boundary crossing exact non-zero
+			SignificantDecimal sd1 = new SignificantDecimal(new int[0],1,false, false);
+			SignificantDecimal sd2 = new SignificantDecimal(new int[] {1,2,3},2,false, true);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(new int[] {1,2},2,true, false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Exact minus exact
+			SignificantDecimal sd1 = new SignificantDecimal(5,true);
+			SignificantDecimal sd2 = new SignificantDecimal(2,true);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(3, true),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Exact minus exact at different scales
+			SignificantDecimal sd1 = new SignificantDecimal(500,true);
+			SignificantDecimal sd2 = new SignificantDecimal(2,true);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(498, true),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Exact plus exact at different scales
+			SignificantDecimal sd1 = new SignificantDecimal(500,true);
+			SignificantDecimal sd2 = new SignificantDecimal(-2,true);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(502, true),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Exact minus inexact
+			SignificantDecimal sd1 = new SignificantDecimal(5,true);
+			SignificantDecimal sd2 = new SignificantDecimal(2,false);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(3, false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Inexact minus exact
+			SignificantDecimal sd1 = new SignificantDecimal(5,false);
+			SignificantDecimal sd2 = new SignificantDecimal(2,true);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(3, false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Exact minus inexact at different scales
+			SignificantDecimal sd1 = new SignificantDecimal(500,true);
+			SignificantDecimal sd2 = new SignificantDecimal(2,false);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(498, false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
+
+		{ // Inexact minus exact at different scales
+			SignificantDecimal sd1 = new SignificantDecimal(new int[] {5},2,false,false);
+			SignificantDecimal sd2 = new SignificantDecimal(2,true);
+			try {
+				SignificantDecimal m = sd1.subtract(sd2);
+				assertEquals(new SignificantDecimal(new int[] {5},2,false,false),m);
+			}
+			catch(Throwable t) {
+				t.printStackTrace();
+				fail("Unexpected exception: "+t.getMessage());
+			}
+		}
 	}
 
 	/*
